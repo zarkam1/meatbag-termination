@@ -1109,6 +1109,22 @@
             for (let y = 0; y < canvas.height; y += 50) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
             for (let x = 0; x < canvas.width; x += 50) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
             
+            // ===== DRAW HK-47 FIRST (TEST) =====
+            if (gameRunning && !hk47.dead) {
+                ctx.fillStyle = '#cc4422';
+                ctx.fillRect(hk47.x - 15, hk47.y - 20, 30, 50);
+                ctx.fillStyle = '#bb5533';
+                ctx.beginPath(); ctx.arc(hk47.x, hk47.y - 30, 14, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ffcc00';
+                ctx.beginPath(); ctx.arc(hk47.x, hk47.y - 30, 6, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#555';
+                ctx.fillRect(hk47.x + 15, hk47.y - 5, 30, 8);
+                ctx.fillStyle = '#884422';
+                ctx.fillRect(hk47.x - 10, hk47.y + 30, 8, 30);
+                ctx.fillRect(hk47.x + 2, hk47.y + 30, 8, 30);
+            }
+            // ===== END HK-47 FIRST =====
+            
             // Draw obstacles (vehicles, barriers) - canvas rendered
             for (const obs of obstacles) {
                 ctx.save();
