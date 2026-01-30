@@ -1,0 +1,7 @@
+# Large media files
+*.mp4
+movie-assets/
+
+# OS files
+.DS_Store
+Thumbs.db

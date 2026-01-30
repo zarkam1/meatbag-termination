@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>MEATBAG TERMINATION PROTOCOL v5.0</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        body { background: #0a0a0a; overflow: hidden; font-family: 'Courier New', monospace; }
+        #gameContainer { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+        canvas { display: block; background: #111; }
+        
+        #ui { position: absolute; top: 8px; left: 10px; right: 10px; display: flex; justify-content: space-between; color: #ff4444; font-size: clamp(10px, 3vw, 14px); text-shadow: 0 0 10px #ff0000; z-index: 10; }
+        #powerups { position: absolute; top: 50px; left: 10px; display: flex; gap: 8px; z-index: 10; }
+        .powerup-indicator { padding: 4px 8px; border-radius: 4px; font-size: 11px; display: none; }
+        .powerup-indicator.active { display: block; animation: powerupPulse 0.5s ease-in-out infinite alternate; }
+        @keyframes powerupPulse { from { opacity: 0.7; } to { opacity: 1; } }
+        #shieldIndicator { background: rgba(0,150,255,0.3); border: 1px solid #00aaff; color: #00aaff; }
+        #rapidIndicator { background: rgba(255,200,0,0.3); border: 1px solid #ffcc00; color: #ffcc00; }
+        #multiIndicator { background: rgba(0,255,100,0.3); border: 1px solid #00ff66; color: #00ff66; }
+        #slowmoIndicator { background: rgba(150,0,255,0.3); border: 1px solid #aa00ff; color: #aa00ff; }
+        #magnetIndicator { background: rgba(255,100,200,0.3); border: 1px solid #ff66cc; color: #ff66cc; }
+        #pierceIndicator { background: rgba(255,50,50,0.3); border: 1px solid #ff3333; color: #ff3333; }
+        
+        #levelBar { position: absolute; top: 32px; left: 10px; right: 10px; height: 8px; background: #333; border-radius: 4px; z-index: 10; }
+        #levelFill { height: 100%; background: linear-gradient(90deg, #ff4444, #ffaa00); border-radius: 4px; width: 0%; transition: width 0.3s; }
+        #levelText { position: absolute; top: 32px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 10px; z-index: 11; }
+        
+        #controls { position: absolute; bottom: 10px; left: 0; right: 0; display: none; justify-content: space-between; z-index: 10; padding: 0 10px; pointer-events: none; }
+        #controls > * { pointer-events: auto; }
+        .touch-device #controls { display: flex; }
+        
+        #joystickZone { width: min(100px, 25vw); height: min(100px, 25vw); border: 2px solid rgba(255,68,68,0.3); border-radius: 50%; position: relative; background: rgba(255,68,68,0.1); flex-shrink: 0; }
+        #joystick { width: 45%; height: 45%; background: rgba(255,68,68,0.5); border: 2px solid #ff4444; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        #fireZone { width: min(80px, 20vw); height: min(80px, 20vw); border: 3px solid #ff4444; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #ff4444; font-size: clamp(18px, 5vw, 28px); background: rgba(255,68,68,0.2); flex-shrink: 0; }
+        #fireZone:active { background: rgba(255,68,68,0.5); transform: scale(0.95); }
+        
+        #desktopHint { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); color: #666; font-size: 11px; z-index: 10; display: none; text-align: center; }
+        .desktop-device #desktopHint { display: block; }
+        .desktop-device #desktopHint.game-active { opacity: 0.3; }
+        
+        #startScreen, #gameOverScreen, #levelUpScreen, #leaderboardScreen, #nameEntryScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; color: #ff4444; text-align: center; z-index: 100; padding: 20px; overflow-y: auto; }
+        #gameOverScreen, #levelUpScreen, #leaderboardScreen, #nameEntryScreen { display: none; }
+        #levelUpScreen { background: rgba(0,50,0,0.95); }
+        #levelUpScreen h1 { color: #00ff00; }
+        #leaderboardScreen { background: rgba(0,0,0,0.98); }
+        #nameEntryScreen { background: rgba(50,0,0,0.98); }
+        
+        h1 { font-size: clamp(14px, 4vw, 18px); margin-bottom: 12px; text-shadow: 0 0 20px #ff0000; line-height: 1.3; }
+        .version { color: #00ff00; font-size: 11px; margin-bottom: 8px; }
+        .subtitle { font-size: clamp(10px, 3vw, 12px); color: #888; margin-bottom: 15px; max-width: 320px; }
+        .features { font-size: 10px; color: #666; margin-bottom: 10px; line-height: 1.6; max-width: 300px; }
+        .features span { color: #ff8800; }
+        .instructions { font-size: clamp(9px, 2.5vw, 11px); color: #666; margin-bottom: 15px; line-height: 1.8; }
+        .instructions span { color: #ff4444; }
+        .instructions .desktop-only { display: none; }
+        .desktop-device .instructions .desktop-only { display: block; }
+        .instructions .mobile-only { display: block; }
+        .desktop-device .instructions .mobile-only { display: none; }
+        .btn { background: #ff4444; color: #000; border: none; padding: 12px 35px; font-size: 16px; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 12px; }
+        .btn-secondary { background: #444; color: #fff; margin-top: 8px; padding: 8px 25px; font-size: 12px; }
+        
+        #hkComment { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); color: #ff8800; font-size: 12px; text-align: center; width: 90%; max-width: 280px; text-shadow: 0 0 10px #ff4400; z-index: 10; opacity: 0; transition: opacity 0.3s; }
+        #bossWarning { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ff0000; font-size: clamp(16px, 5vw, 24px); font-weight: bold; text-shadow: 0 0 30px #ff0000; z-index: 15; opacity: 0; animation: none; }
+        @keyframes bossFlash { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+        
+        #finalScore, #levelScore { font-size: clamp(24px, 8vw, 36px); color: #ff8800; margin: 12px 0; }
+        #levelScore { color: #00ff00; }
+        #highScore, #killCount { font-size: 13px; color: #888; margin-bottom: 6px; }
+        #killCount { color: #00ff00; }
+        #deathQuote { font-size: 12px; color: #ff4444; max-width: 260px; margin: 12px 0; font-style: italic; }
+        
+        .floating-text { position: absolute; font-size: 14px; font-weight: bold; pointer-events: none; animation: floatUp 0.7s ease-out forwards; z-index: 50; }
+        .near-miss { color: #00ff00; }
+        .kill-text { color: #ff0000; }
+        .boss-text { color: #ff00ff; font-size: 18px; }
+        .powerup-text { color: #00aaff; font-size: 16px; }
+        .bomb-text { color: #ff8800; font-size: 20px; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-35px) scale(1.2); } }
+        
+        #soundToggle { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.5); border: 1px solid #ff4444; color: #ff4444; padding: 4px 8px; font-size: 11px; z-index: 101; cursor: pointer; }
+        
+        #bossHP { position: absolute; top: 85px; left: 20px; right: 20px; height: 12px; background: #333; border: 2px solid #ff00ff; border-radius: 6px; z-index: 10; display: none; }
+        #bossHPFill { height: 100%; background: linear-gradient(90deg, #ff00ff, #ff0088); border-radius: 4px; width: 100%; transition: width 0.2s; }
+        #bossHPLabel { position: absolute; top: 85px; left: 50%; transform: translateX(-50%); color: #ff00ff; font-size: 10px; z-index: 11; display: none; }
+        
+        .leaderboard { width: 100%; max-width: 300px; margin: 15px 0; }
+        .leaderboard-entry { display: flex; justify-content: space-between; padding: 6px 10px; margin: 3px 0; background: rgba(255,68,68,0.1); border-left: 3px solid #ff4444; font-size: 12px; }
+        .leaderboard-entry.gold { border-left-color: #ffd700; background: rgba(255,215,0,0.1); }
+        .leaderboard-entry.silver { border-left-color: #c0c0c0; background: rgba(192,192,192,0.1); }
+        .leaderboard-entry.bronze { border-left-color: #cd7f32; background: rgba(205,127,50,0.1); }
+        .leaderboard-rank { color: #888; width: 25px; }
+        .leaderboard-name { color: #fff; flex: 1; text-align: left; margin-left: 10px; }
+        .leaderboard-score { color: #ff8800; }
+        .new-score { animation: pulse 0.5s ease-in-out infinite alternate; }
+        @keyframes pulse { from { color: #ff8800; } to { color: #ffff00; } }
+        
+        #nameInput { background: #222; border: 2px solid #ff4444; color: #fff; padding: 10px 15px; font-size: 18px; font-family: 'Courier New', monospace; text-align: center; text-transform: uppercase; width: 200px; margin: 15px 0; }
+        #nameInput:focus { outline: none; border-color: #ff8800; box-shadow: 0 0 20px rgba(255,136,0,0.5); }
+        .name-prompt { color: #ff8800; font-size: 14px; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="game"></canvas>
+        <div id="ui">
+            <div id="score">SCORE: 0</div>
+            <div id="level">LVL 1</div>
+            <div id="kills">KILLS: 0</div>
+        </div>
+        <div id="powerups">
+            <div id="shieldIndicator" class="powerup-indicator">🛡️ SHIELD</div>
+            <div id="rapidIndicator" class="powerup-indicator">⚡ RAPID</div>
+            <div id="multiIndicator" class="powerup-indicator">🔫 MULTI</div>
+            <div id="slowmoIndicator" class="powerup-indicator">⏱️ SLOW-MO</div>
+            <div id="magnetIndicator" class="powerup-indicator">🧲 MAGNET</div>
+            <div id="pierceIndicator" class="powerup-indicator">💀 PIERCE</div>
+        </div>
+        <div id="levelBar"><div id="levelFill"></div></div>
+        <div id="levelText">LEVEL 1 - 0/10 KILLS</div>
+        <div id="bossHP"><div id="bossHPFill"></div></div>
+        <div id="bossHPLabel">⚠️ BOSS ⚠️</div>
+        <div id="hkComment"></div>
+        <div id="bossWarning">⚠️ BOSS INCOMING ⚠️</div>
+        
+        <div id="controls">
+            <div id="joystickZone"><div id="joystick"></div></div>
+            <div id="fireZone">🔫</div>
+        </div>
+        
+        <div id="desktopHint">WASD/Arrows: Move • Space/Click: Fire • B: Bomb</div>
+        
+        <div id="startScreen">
+            <button id="soundToggle">🔊 ON</button>
+            <div class="version">v5.0 - MAXIMUM CARNAGE EDITION!</div>
+            <h1>🤖 MEATBAG TERMINATION PROTOCOL 🤖</h1>
+            <div class="subtitle">New enemies! Power-ups! Bombs! Soldiers fight back!</div>
+            <div class="features">
+                <span>ENEMIES:</span> Meatbags, Soldiers, Hunters, Tanks, Kamikazes, Phasers, Splitters!<br>
+                <span>LOOT:</span> 🛡️Shield ⚡Rapid 🔫Multi ⏱️Slow-Mo 🧲Magnet 💀Pierce 💥Bomb<br>
+                <span>BOSS:</span> Every 3 levels!
+            </div>
+            <div class="instructions">
+                <div class="mobile-only">
+                    <span>JOYSTICK:</span> Move • <span>🔫:</span> Fire
+                </div>
+                <div class="desktop-only">
+                    <span>WASD/Arrows:</span> Move • <span>Space/Click:</span> Fire • <span>B:</span> Bomb
+                </div>
+            </div>
+            <button class="btn" id="startBtn">START CAMPAIGN</button>
+            <button class="btn btn-secondary" id="showLeaderboardBtn">🏆 LEADERBOARD</button>
+        </div>
+        
+        <div id="nameEntryScreen">
+            <h1>🏆 NEW HIGH SCORE! 🏆</h1>
+            <div id="newScoreDisplay" style="font-size: 36px; color: #ffaa00; margin: 10px 0;">0</div>
+            <div class="name-prompt">ENTER YOUR DESIGNATION:</div>
+            <input type="text" id="nameInput" maxlength="10" placeholder="HK-47" autocomplete="off">
+            <button class="btn" id="submitScoreBtn">SUBMIT</button>
+        </div>
+        
+        <div id="leaderboardScreen">
+            <h1>🏆 TOP TERMINATORS 🏆</h1>
+            <div class="leaderboard" id="leaderboardList"></div>
+            <button class="btn" id="backFromLeaderboardBtn">BACK</button>
+        </div>
+        
+        <div id="levelUpScreen">
+            <h1>✓ LEVEL COMPLETE!</h1>
+            <div id="levelScore">0</div>
+            <div id="nextLevel">ADVANCING TO LEVEL 2</div>
+            <button class="btn" id="continueBtn">CONTINUE</button>
+        </div>
+        
+        <div id="gameOverScreen">
+            <h1>MISSION FAILURE</h1>
+            <div id="deathQuote"></div>
+            <div id="killCount"></div>
+            <div id="highScore"></div>
+            <div id="finalScore">0</div>
+            <button class="btn" id="restartBtn">RESTART</button>
+            <button class="btn btn-secondary" id="gameOverLeaderboardBtn">🏆 LEADERBOARD</button>
+        </div>
+    </div>
+
+    <script>
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        document.body.classList.add(isTouchDevice ? 'touch-device' : 'desktop-device');
+        
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        
+        // Leaderboard
+        const LEADERBOARD_KEY = 'hk47_leaderboard_v5';
+        let leaderboard = JSON.parse(localStorage.getItem(LEADERBOARD_KEY)) || [];
+        let pendingScore = null;
+        
+        function getLeaderboard() { return leaderboard.sort((a, b) => b.score - a.score).slice(0, 10); }
+        function addToLeaderboard(name, score, level, kills) {
+            leaderboard.push({ name: name.toUpperCase(), score, level, kills, date: Date.now() });
+            leaderboard = leaderboard.sort((a, b) => b.score - a.score).slice(0, 10);
+            localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard));
+        }
+        function isHighScore(score) { return leaderboard.length < 10 || score > (leaderboard[leaderboard.length - 1]?.score || 0); }
+        
+        function renderLeaderboard(highlightScore = null) {
+            const list = document.getElementById('leaderboardList');
+            const entries = getLeaderboard();
+            if (entries.length === 0) { list.innerHTML = '<div style="color: #666; font-size: 12px;">No scores yet!</div>'; return; }
+            list.innerHTML = entries.map((e, i) => {
+                const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+                const isNew = highlightScore && e.score === highlightScore && (Date.now() - e.date) < 5000;
+                return `<div class="leaderboard-entry ${rankClass} ${isNew ? 'new-score' : ''}"><span class="leaderboard-rank">${i + 1}.</span><span class="leaderboard-name">${e.name}</span><span class="leaderboard-score">${Math.floor(e.score)} (L${e.level})</span></div>`;
+            }).join('');
+        }
+        
+        function showLeaderboard(hs = null) { renderLeaderboard(hs); document.getElementById('leaderboardScreen').style.display = 'flex'; }
+        function hideLeaderboard() { document.getElementById('leaderboardScreen').style.display = 'none'; }
+        function showNameEntry(score, level, kills) {
+            pendingScore = { score, level, kills };
+            document.getElementById('newScoreDisplay').textContent = Math.floor(score);
+            document.getElementById('nameInput').value = '';
+            document.getElementById('nameEntryScreen').style.display = 'flex';
+            setTimeout(() => document.getElementById('nameInput').focus(), 100);
+        }
+        function submitScore() {
+            if (!pendingScore) return;
+            const name = document.getElementById('nameInput').value.trim() || 'HK-47';
+            addToLeaderboard(name, pendingScore.score, pendingScore.level, pendingScore.kills);
+            document.getElementById('nameEntryScreen').style.display = 'none';
+            showLeaderboard(pendingScore.score);
+            pendingScore = null;
+        }
+        
+        document.getElementById('showLeaderboardBtn').addEventListener('click', () => showLeaderboard());
+        document.getElementById('backFromLeaderboardBtn').addEventListener('click', () => { hideLeaderboard(); document.getElementById('startScreen').style.display = 'flex'; });
+        document.getElementById('gameOverLeaderboardBtn').addEventListener('click', () => { document.getElementById('gameOverScreen').style.display = 'none'; showLeaderboard(); });
+        document.getElementById('submitScoreBtn').addEventListener('click', submitScore);
+        document.getElementById('nameInput').addEventListener('keypress', e => { if (e.key === 'Enter') submitScore(); });
+        
+        // Audio
+        let soundEnabled = true, currentVoice = null, audioContext;
+        const audioCache = {};
+        const audioFiles = {
+            kill: ['audio/kill1.mp3', 'audio/kill2.mp3', 'audio/kill3.mp3', 'audio/kill4.mp3'],
+            near: ['audio/near1.mp3', 'audio/near2.mp3'],
+            death: ['audio/death1.mp3', 'audio/death2.mp3', 'audio/death3.mp3'],
+            bossAlert: ['audio/boss_alert.mp3'], bossKill: ['audio/boss_kill.mp3'], levelUp: ['audio/level_up.mp3']
+        };
+        
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            for (let cat in audioFiles) audioFiles[cat].forEach(src => { const a = new Audio(src); a.preload = 'auto'; audioCache[src] = a; });
+        }
+        function playVoice(cat) {
+            if (!soundEnabled) return;
+            if (currentVoice) { currentVoice.pause(); currentVoice.currentTime = 0; }
+            const files = audioFiles[cat]; if (!files?.length) return;
+            const a = audioCache[files[Math.floor(Math.random() * files.length)]];
+            if (a) { a.currentTime = 0; a.volume = 0.8; a.play().catch(() => {}); currentVoice = a; }
+        }
+        function playSound(type) {
+            if (!soundEnabled || !audioContext) return;
+            const osc = audioContext.createOscillator(), gain = audioContext.createGain();
+            osc.connect(gain); gain.connect(audioContext.destination);
+            if (type === 'blaster') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                osc.start(); osc.stop(audioContext.currentTime + 0.1);
+            } else if (type === 'explosion') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(150, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, audioContext.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.4, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                osc.start(); osc.stop(audioContext.currentTime + 0.3);
+            } else if (type === 'powerup') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                osc.start(); osc.stop(audioContext.currentTime + 0.15);
+            } else if (type === 'bomb') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(20, audioContext.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.5, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                osc.start(); osc.stop(audioContext.currentTime + 0.5);
+            }
+        }
+        
+        const soundToggle = document.getElementById('soundToggle');
+        soundToggle.addEventListener('click', () => { soundEnabled = !soundEnabled; soundToggle.textContent = soundEnabled ? '🔊 ON' : '🔇 OFF'; if (soundEnabled && !audioContext) initAudio(); });
+        
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resize(); window.addEventListener('resize', resize);
+        
+        // Game state
+        let gameRunning = false, score = 0, kills = 0, totalKills = 0, level = 1, levelKills = 0;
+        let highScore = localStorage.getItem('hk47_hs_v5') || 0;
+        let multiplier = 1, bombs = 3;
+        let hk47 = { x: 0, y: 0, dead: false, rotation: 0, deadVelX: 0, deadVelY: 0 };
+        let meatbags = [], projectiles = [], enemyBullets = [], explosions = [], powerups = [];
+        let boss = null, gameTime = 0, lastSpawn = 0;
+        let joystickX = 0, joystickY = 0, joystickActive = false;
+        
+        // Power-up states
+        let shieldActive = false, shieldTimer = 0;
+        let rapidActive = false, rapidTimer = 0;
+        let multiActive = false, multiTimer = 0;
+        let slowmoActive = false, slowmoTimer = 0;
+        let magnetActive = false, magnetTimer = 0;
+        let pierceActive = false, pierceTimer = 0;
+        
+        const keys = { up: false, down: false, left: false, right: false, fire: false };
+        let lastFireTime = 0;
+        
+        const KILLS_PER_LEVEL = 10, BOSS_EVERY = 3;
+        const POWERUP_DURATION = 8;
+        
+        const deathQuotes = [
+            "Condescending Statement: Your reflexes are inferior!",
+            "Observation: The meatbag soldiers got you!",
+            "Assessment: Organic incompetence detected!"
+        ];
+        
+        // Enemy types
+        const ENEMY_TYPES = {
+            meatbag: { color: '#ff6b6b', speed: 1, size: 1, hp: 1, score: 100, behavior: 'walk' },
+            runner: { color: '#95e1d3', speed: 2, size: 0.7, hp: 1, score: 150, behavior: 'walk' },
+            tank: { color: '#ffe66d', speed: 0.5, size: 1.4, hp: 4, score: 300, behavior: 'walk' },
+            soldier: { color: '#ff8844', speed: 0.8, size: 1, hp: 2, score: 250, behavior: 'soldier', shootRate: 2 },
+            hunter: { color: '#ff44ff', speed: 1.2, size: 0.9, hp: 2, score: 350, behavior: 'chase' },
+            kamikaze: { color: '#ff0000', speed: 2.5, size: 0.8, hp: 1, score: 200, behavior: 'kamikaze' },
+            phaser: { color: '#00ffff', speed: 0.8, size: 0.85, hp: 2, score: 400, behavior: 'phaser', teleportRate: 2.5 },
+            splitter: { color: '#88ff00', speed: 0.9, size: 1.2, hp: 3, score: 350, behavior: 'walk', splits: true },
+        };
+        
+        const POWERUP_TYPES = ['shield', 'rapid', 'multi', 'bomb', 'slowmo', 'magnet', 'pierce'];
+        
+        function init() {
+            hk47 = { x: canvas.width / 2, y: canvas.height - 200, dead: false, rotation: 0, deadVelX: 0, deadVelY: 0 };
+            meatbags = []; projectiles = []; enemyBullets = []; explosions = []; powerups = [];
+            boss = null; score = 0; kills = 0; levelKills = 0; bombs = 3;
+            multiplier = 1; gameTime = 0; lastSpawn = 0;
+            shieldActive = rapidActive = multiActive = slowmoActive = magnetActive = pierceActive = false;
+            shieldTimer = rapidTimer = multiTimer = slowmoTimer = magnetTimer = pierceTimer = 0;
+            joystickX = joystickY = 0;
+            updateUI(); updatePowerupIndicators();
+            document.getElementById('bossHP').style.display = 'none';
+            document.getElementById('bossHPLabel').style.display = 'none';
+        }
+        
+        function spawnEnemy() {
+            if (boss) return;
+            
+            // Choose enemy type based on level
+            let typeChances = [
+                { type: 'meatbag', weight: 50 },
+                { type: 'runner', weight: 20 + level * 2 },
+                { type: 'tank', weight: 5 + level * 2 },
+                { type: 'soldier', weight: level >= 2 ? 10 + level * 3 : 0 },
+                { type: 'hunter', weight: level >= 3 ? 5 + level * 2 : 0 },
+                { type: 'kamikaze', weight: level >= 4 ? 8 + level * 2 : 0 },
+                { type: 'phaser', weight: level >= 5 ? 6 + level * 2 : 0 },
+                { type: 'splitter', weight: level >= 4 ? 7 + level * 2 : 0 },
+            ];
+            
+            const totalWeight = typeChances.reduce((s, t) => s + t.weight, 0);
+            let rand = Math.random() * totalWeight;
+            let chosenType = 'meatbag';
+            for (const t of typeChances) {
+                rand -= t.weight;
+                if (rand <= 0) { chosenType = t.type; break; }
+            }
+            
+            const type = ENEMY_TYPES[chosenType];
+            const fromLeft = Math.random() > 0.5;
+            const speedMult = 1 + level * 0.1;
+            
+            const enemy = {
+                x: fromLeft ? -50 : canvas.width + 50,
+                y: Math.random() * (canvas.height - 350) + 60,
+                vx: (fromLeft ? 1 : -1) * type.speed * speedMult * 60,
+                vy: 0,
+                type: chosenType,
+                config: type,
+                size: 50 * type.size,
+                hp: type.hp + Math.floor(level / 4),
+                maxHp: type.hp + Math.floor(level / 4),
+                shootTimer: Math.random() * 2,
+                teleportTimer: type.teleportRate ? Math.random() * type.teleportRate : 0,
+                color: type.color
+            };
+            
+            meatbags.push(enemy);
+        }
+        
+        function spawnBoss() {
+            const bossHP = 25 + level * 8;
+            boss = { x: canvas.width / 2, y: -100, targetY: 100, size: 120, hp: bossHP, maxHp: bossHP, timer: 0, entering: true, phase: 0 };
+            document.getElementById('bossHP').style.display = 'block';
+            document.getElementById('bossHPLabel').style.display = 'block';
+            document.getElementById('bossWarning').style.animation = 'bossFlash 0.5s ease-in-out 3';
+            playVoice('bossAlert');
+            setTimeout(() => document.getElementById('bossWarning').style.animation = 'none', 1500);
+        }
+        
+        function spawnPowerup(x, y) {
+            if (Math.random() > 0.25) return; // 25% drop chance
+            const type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+            powerups.push({ x, y, type, vy: 50, size: 25, time: 0 });
+        }
+        
+        function activatePowerup(type) {
+            playSound('powerup');
+            if (type === 'shield') { shieldActive = true; shieldTimer = POWERUP_DURATION; showFloatingText(hk47.x, hk47.y - 50, '🛡️ SHIELD!', 'powerup-text'); }
+            else if (type === 'rapid') { rapidActive = true; rapidTimer = POWERUP_DURATION; showFloatingText(hk47.x, hk47.y - 50, '⚡ RAPID FIRE!', 'powerup-text'); }
+            else if (type === 'multi') { multiActive = true; multiTimer = POWERUP_DURATION; showFloatingText(hk47.x, hk47.y - 50, '🔫 MULTI-SHOT!', 'powerup-text'); }
+            else if (type === 'bomb') { bombs++; showFloatingText(hk47.x, hk47.y - 50, '💥 +1 BOMB!', 'powerup-text'); }
+            else if (type === 'slowmo') { slowmoActive = true; slowmoTimer = 5; showFloatingText(hk47.x, hk47.y - 50, '⏱️ SLOW-MO!', 'powerup-text'); }
+            else if (type === 'magnet') { magnetActive = true; magnetTimer = 10; showFloatingText(hk47.x, hk47.y - 50, '🧲 MAGNET!', 'powerup-text'); }
+            else if (type === 'pierce') { pierceActive = true; pierceTimer = 6; showFloatingText(hk47.x, hk47.y - 50, '💀 PIERCING!', 'powerup-text'); }
+            updatePowerupIndicators();
+        }
+        
+        function updatePowerupIndicators() {
+            document.getElementById('shieldIndicator').classList.toggle('active', shieldActive);
+            document.getElementById('rapidIndicator').classList.toggle('active', rapidActive);
+            document.getElementById('multiIndicator').classList.toggle('active', multiActive);
+            document.getElementById('slowmoIndicator').classList.toggle('active', slowmoActive);
+            document.getElementById('magnetIndicator').classList.toggle('active', magnetActive);
+            document.getElementById('pierceIndicator').classList.toggle('active', pierceActive);
+        }
+        
+        function useBomb() {
+            if (bombs <= 0 || !gameRunning || hk47.dead) return;
+            bombs--;
+            playSound('bomb');
+            showFloatingText(canvas.width / 2, canvas.height / 2, '💥 BOMB!', 'bomb-text');
+            
+            // Kill all regular enemies
+            for (const m of meatbags) {
+                createExplosion(m.x, m.y, m.color);
+                score += m.config.score * multiplier;
+                kills++; totalKills++; levelKills++;
+            }
+            meatbags = [];
+            enemyBullets = [];
+            
+            // Damage boss
+            if (boss && !boss.entering) {
+                boss.hp -= 5;
+                createExplosion(boss.x, boss.y, '#ff00ff', true);
+            }
+            
+            updateUI();
+        }
+        
+        function fireProjectile() {
+            const now = Date.now();
+            const fireRate = rapidActive ? 80 : 150;
+            if (now - lastFireTime < fireRate) return;
+            lastFireTime = now;
+            
+            if (multiActive) {
+                projectiles.push({ x: hk47.x - 15, y: hk47.y - 30, vy: -22, vx: -2, size: 6 });
+                projectiles.push({ x: hk47.x, y: hk47.y - 35, vy: -22, vx: 0, size: 8 });
+                projectiles.push({ x: hk47.x + 15, y: hk47.y - 30, vy: -22, vx: 2, size: 6 });
+            } else {
+                projectiles.push({ x: hk47.x, y: hk47.y - 30, vy: -22, vx: 0, size: 8 });
+            }
+            playSound('blaster');
+        }
+        
+        function createExplosion(x, y, color, big = false) {
+            explosions.push({ x, y, radius: 5, maxRadius: big ? 100 : 45, color, alpha: 1 });
+            playSound('explosion');
+        }
+        
+        function levelUp() {
+            gameRunning = false;
+            level++; levelKills = 0;
+            playVoice('levelUp');
+            document.getElementById('levelScore').textContent = 'SCORE: ' + Math.floor(score);
+            document.getElementById('nextLevel').textContent = 'ADVANCING TO LEVEL ' + level;
+            document.getElementById('levelUpScreen').style.display = 'flex';
+        }
+        
+        function update(dt) {
+            if (!gameRunning || hk47.dead) return;
+            gameTime += dt;
+            score += Math.floor((2 + level) * dt * 10 * multiplier);
+            
+            // Update powerup timers
+            if (shieldActive) { shieldTimer -= dt; if (shieldTimer <= 0) shieldActive = false; }
+            if (rapidActive) { rapidTimer -= dt; if (rapidTimer <= 0) rapidActive = false; }
+            if (multiActive) { multiTimer -= dt; if (multiTimer <= 0) multiActive = false; }
+            if (slowmoActive) { slowmoTimer -= dt; if (slowmoTimer <= 0) slowmoActive = false; }
+            if (magnetActive) { magnetTimer -= dt; if (magnetTimer <= 0) magnetActive = false; }
+            if (pierceActive) { pierceTimer -= dt; if (pierceTimer <= 0) pierceActive = false; }
+            updatePowerupIndicators();
+            
+            // Slow-mo speed multiplier for enemies
+            const timeScale = slowmoActive ? 0.3 : 1;
+            
+            // Spawn enemies
+            const spawnRate = Math.max(0.3, 1.0 - level * 0.05);
+            if (!boss && gameTime - lastSpawn > spawnRate) {
+                spawnEnemy();
+                if (Math.random() > 0.6 - level * 0.02) spawnEnemy();
+                lastSpawn = gameTime;
+            }
+            
+            // Movement
+            let moveX = joystickX, moveY = joystickY;
+            if (keys.left) moveX = -1; if (keys.right) moveX = 1;
+            if (keys.up) moveY = -1; if (keys.down) moveY = 1;
+            if (moveX !== 0 && moveY !== 0) { const mag = Math.sqrt(moveX*moveX + moveY*moveY); moveX /= mag; moveY /= mag; }
+            
+            const moveSpeed = 300 + level * 8;
+            hk47.x += moveX * moveSpeed * dt;
+            hk47.y += moveY * moveSpeed * dt;
+            hk47.x = Math.max(30, Math.min(canvas.width - 30, hk47.x));
+            hk47.y = Math.max(60, Math.min(canvas.height - 150, hk47.y));
+            
+            if (keys.fire && !hk47.dead) fireProjectile();
+            
+            // Update boss
+            if (boss) {
+                if (boss.entering) {
+                    boss.y += (boss.targetY - boss.y) * 0.03;
+                    if (Math.abs(boss.y - boss.targetY) < 5) boss.entering = false;
+                } else {
+                    boss.timer += dt;
+                    boss.x += Math.sin(boss.timer * 1.5) * 120 * dt;
+                    boss.x = Math.max(80, Math.min(canvas.width - 80, boss.x));
+                    
+                    // Boss shoots more
+                    if (Math.random() < dt * 2) {
+                        const angle = Math.atan2(hk47.y - boss.y, hk47.x - boss.x);
+                        enemyBullets.push({ x: boss.x, y: boss.y + 60, vx: Math.cos(angle) * 250, vy: Math.sin(angle) * 250, size: 12, color: '#ff00ff' });
+                    }
+                }
+                document.getElementById('bossHPFill').style.width = (boss.hp / boss.maxHp * 100) + '%';
+            }
+            
+            // Update projectiles
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const p = projectiles[i];
+                p.y += p.vy * 60 * dt;
+                p.x += (p.vx || 0) * 60 * dt;
+                if (p.y < -20 || p.x < -20 || p.x > canvas.width + 20) { projectiles.splice(i, 1); continue; }
+                
+                // Hit boss
+                if (boss && !boss.entering) {
+                    const dx = p.x - boss.x, dy = p.y - boss.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < boss.size / 2 + p.size) {
+                        boss.hp--; projectiles.splice(i, 1);
+                        showFloatingText(boss.x, boss.y - 50, '-1', 'boss-text');
+                        if (boss.hp <= 0) {
+                            createExplosion(boss.x, boss.y, '#ff00ff', true);
+                            score += 2000 * level;
+                            showFloatingText(boss.x, boss.y, '+' + (2000 * level) + ' BOSS!', 'boss-text');
+                            playVoice('bossKill');
+                            boss = null;
+                            document.getElementById('bossHP').style.display = 'none';
+                            document.getElementById('bossHPLabel').style.display = 'none';
+                            levelUp();
+                        }
+                        continue;
+                    }
+                }
+                
+                // Hit enemies
+                let projectileConsumed = false;
+                for (let j = meatbags.length - 1; j >= 0; j--) {
+                    const m = meatbags[j];
+                    const dx = p.x - m.x, dy = p.y - m.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < m.size / 2 + p.size) {
+                        m.hp--;
+                        if (!pierceActive) { projectiles.splice(i, 1); projectileConsumed = true; }
+                        if (m.hp <= 0) {
+                            createExplosion(m.x, m.y, m.color);
+                            const deadX = m.x, deadY = m.y;
+                            const wasSplitter = m.config.splits && !m.isMini;
+                            meatbags.splice(j, 1);
+                            kills++; totalKills++; levelKills++;
+                            const bonus = Math.floor(m.config.score * multiplier);
+                            score += bonus;
+                            multiplier = Math.min(multiplier + 0.15, 5);
+                            showFloatingText(deadX, deadY, '+' + bonus, 'kill-text');
+                            spawnPowerup(deadX, deadY);
+                            if (Math.random() > 0.65) playVoice('kill');
+                            
+                            // Splitter spawns 2 mini versions
+                            if (wasSplitter) {
+                                for (let s = 0; s < 2; s++) {
+                                    const angle = s === 0 ? -0.5 : 0.5;
+                                    meatbags.push({
+                                        x: deadX + (s === 0 ? -20 : 20),
+                                        y: deadY,
+                                        vx: (s === 0 ? -1 : 1) * 80,
+                                        vy: 0,
+                                        type: 'splitter',
+                                        config: ENEMY_TYPES.splitter,
+                                        size: 25,
+                                        hp: 1,
+                                        maxHp: 1,
+                                        shootTimer: 0,
+                                        teleportTimer: 0,
+                                        color: '#aaff44',
+                                        isMini: true
+                                    });
+                                }
+                                showFloatingText(deadX, deadY - 20, 'SPLIT!', 'boss-text');
+                            }
+                            
+                            if (!boss && levelKills >= KILLS_PER_LEVEL) {
+                                if (level % BOSS_EVERY === BOSS_EVERY - 1) spawnBoss();
+                                else levelUp();
+                            }
+                        }
+                        if (!pierceActive) break;
+                    }
+                }
+                if (projectileConsumed) continue;
+            }
+            
+            // Update enemy bullets (affected by slow-mo)
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const b = enemyBullets[i];
+                b.x += b.vx * dt * timeScale; b.y += b.vy * dt * timeScale;
+                if (b.x < -20 || b.x > canvas.width + 20 || b.y < -20 || b.y > canvas.height + 20) { enemyBullets.splice(i, 1); continue; }
+                
+                // Hit player
+                const dx = b.x - hk47.x, dy = b.y - hk47.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 25 + b.size && !hk47.dead) {
+                    if (shieldActive) {
+                        shieldActive = false; shieldTimer = 0;
+                        enemyBullets.splice(i, 1);
+                        showFloatingText(hk47.x, hk47.y - 40, 'SHIELD BLOCKED!', 'powerup-text');
+                        updatePowerupIndicators();
+                    } else {
+                        hk47.dead = true;
+                        hk47.deadVelX = (Math.random() - 0.5) * 10;
+                        hk47.deadVelY = -8;
+                        playVoice('death');
+                        gameOver();
+                    }
+                }
+            }
+            
+            // Update enemies
+            for (let i = meatbags.length - 1; i >= 0; i--) {
+                const m = meatbags[i];
+                const enemyTimeScale = timeScale; // Slow-mo affects enemies
+                
+                // Behavior
+                if (m.config.behavior === 'walk') {
+                    m.x += m.vx * dt * enemyTimeScale;
+                } else if (m.config.behavior === 'chase') {
+                    const dx = hk47.x - m.x, dy = hk47.y - m.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist > 0) {
+                        m.x += (dx / dist) * m.config.speed * 80 * dt * enemyTimeScale;
+                        m.y += (dy / dist) * m.config.speed * 80 * dt * enemyTimeScale;
+                    }
+                } else if (m.config.behavior === 'soldier') {
+                    m.x += m.vx * dt * enemyTimeScale;
+                    m.shootTimer -= dt * enemyTimeScale;
+                    if (m.shootTimer <= 0) {
+                        m.shootTimer = m.config.shootRate + Math.random();
+                        const dx = hk47.x - m.x, dy = hk47.y - m.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist > 0 && dist < 500) {
+                            enemyBullets.push({ x: m.x, y: m.y, vx: (dx / dist) * 200, vy: (dy / dist) * 200, size: 8, color: '#ff8844' });
+                        }
+                    }
+                } else if (m.config.behavior === 'kamikaze') {
+                    // Fast dive toward player
+                    const dx = hk47.x - m.x, dy = hk47.y - m.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist > 0) {
+                        m.x += (dx / dist) * m.config.speed * 120 * dt * enemyTimeScale;
+                        m.y += (dy / dist) * m.config.speed * 120 * dt * enemyTimeScale;
+                    }
+                } else if (m.config.behavior === 'phaser') {
+                    // Move slowly, teleport periodically
+                    m.x += m.vx * dt * enemyTimeScale * 0.5;
+                    m.teleportTimer -= dt * enemyTimeScale;
+                    if (m.teleportTimer <= 0) {
+                        m.teleportTimer = m.config.teleportRate + Math.random();
+                        // Teleport to random position (but not too close to edges)
+                        m.x = 100 + Math.random() * (canvas.width - 200);
+                        m.y = 80 + Math.random() * (canvas.height - 400);
+                        createExplosion(m.x, m.y, '#00ffff', false);
+                    }
+                }
+                
+                if (m.x < -100 || m.x > canvas.width + 100) { meatbags.splice(i, 1); continue; }
+                
+                // Collision with player
+                const dx = hk47.x - m.x, dy = hk47.y - m.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const hitDist = 25 + m.size / 2;
+                
+                if (dist < hitDist && !hk47.dead) {
+                    // Kamikaze explosion - damages nearby enemies!
+                    if (m.config.behavior === 'kamikaze') {
+                        createExplosion(m.x, m.y, '#ff0000', true);
+                        showFloatingText(m.x, m.y, '💥 BOOM!', 'bomb-text');
+                        // Damage nearby enemies
+                        for (let k = meatbags.length - 1; k >= 0; k--) {
+                            if (k === i) continue;
+                            const other = meatbags[k];
+                            const odx = other.x - m.x, ody = other.y - m.y;
+                            if (Math.sqrt(odx*odx + ody*ody) < 100) {
+                                other.hp -= 2;
+                                if (other.hp <= 0) {
+                                    createExplosion(other.x, other.y, other.color);
+                                    meatbags.splice(k, 1);
+                                    if (k < i) i--;
+                                    kills++; totalKills++; levelKills++;
+                                    score += Math.floor(other.config.score * multiplier);
+                                }
+                            }
+                        }
+                        meatbags.splice(i, 1);
+                    }
+                    
+                    if (shieldActive) {
+                        shieldActive = false; shieldTimer = 0;
+                        if (m.config.behavior !== 'kamikaze') {
+                            createExplosion(m.x, m.y, m.color);
+                            meatbags.splice(i, 1);
+                        }
+                        showFloatingText(hk47.x, hk47.y - 40, 'SHIELD DESTROYED!', 'powerup-text');
+                        updatePowerupIndicators();
+                    } else {
+                        hk47.dead = true;
+                        hk47.deadVelX = (Math.random() - 0.5) * 10;
+                        hk47.deadVelY = -8;
+                        playVoice('death');
+                        gameOver();
+                    }
+                } else if (dist < hitDist + 30 && !m.nearMissed) {
+                    m.nearMissed = true;
+                    const bonus = Math.floor(30 * multiplier);
+                    score += bonus;
+                    multiplier = Math.min(multiplier + 0.05, 5);
+                    showFloatingText(m.x, m.y, '+' + bonus, 'near-miss');
+                }
+            }
+            
+            // Update powerups
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const p = powerups[i];
+                p.y += p.vy * dt;
+                p.time += dt;
+                if (p.y > canvas.height + 50 || p.time > 10) { powerups.splice(i, 1); continue; }
+                
+                const dx = hk47.x - p.x, dy = hk47.y - p.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                // Magnet attraction
+                if (magnetActive && dist < 200) {
+                    const attractSpeed = 400;
+                    p.x += (dx / dist) * attractSpeed * dt;
+                    p.y += (dy / dist) * attractSpeed * dt;
+                }
+                
+                if (dist < 35) {
+                    activatePowerup(p.type);
+                    powerups.splice(i, 1);
+                }
+            }
+            
+            // Update explosions
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                const e = explosions[i];
+                e.radius += 5; e.alpha -= 0.04;
+                if (e.alpha <= 0) explosions.splice(i, 1);
+            }
+            
+            multiplier = Math.max(1, multiplier - dt * 0.03);
+            updateUI();
+        }
+        
+        function updateDeadPhysics(dt) {
+            if (!hk47.dead) return;
+            hk47.deadVelY += 20 * dt;
+            hk47.x += hk47.deadVelX * 60 * dt;
+            hk47.y += hk47.deadVelY * 60 * dt;
+            hk47.rotation += 5 * dt;
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#111'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Grid
+            ctx.strokeStyle = '#1a1a1a';
+            for (let y = 0; y < canvas.height; y += 50) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+            for (let x = 0; x < canvas.width; x += 50) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+            
+            // Explosions
+            explosions.forEach(e => {
+                ctx.beginPath(); ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 100, 50, ${e.alpha})`; ctx.fill();
+                ctx.beginPath(); ctx.arc(e.x, e.y, e.radius * 0.5, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 100, ${e.alpha})`; ctx.fill();
+            });
+            
+            // Powerups
+            powerups.forEach(p => {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.time * 2);
+                const icons = { shield: '🛡️', rapid: '⚡', multi: '🔫', bomb: '💥', slowmo: '⏱️', magnet: '🧲', pierce: '💀' };
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(icons[p.type], 0, 0);
+                ctx.restore();
+            });
+            
+            // Projectiles
+            ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 10;
+            projectiles.forEach(p => { ctx.fillStyle = '#ff0000'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 4, 10, 0, 0, Math.PI * 2); ctx.fill(); });
+            ctx.shadowBlur = 0;
+            
+            // Enemy bullets
+            enemyBullets.forEach(b => {
+                ctx.fillStyle = b.color; ctx.shadowColor = b.color; ctx.shadowBlur = 8;
+                ctx.beginPath(); ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2); ctx.fill();
+            });
+            ctx.shadowBlur = 0;
+            
+            // Enemies
+            meatbags.forEach(m => {
+                ctx.fillStyle = m.color; ctx.shadowColor = m.color; ctx.shadowBlur = 10;
+                
+                // Body
+                ctx.beginPath(); ctx.arc(m.x, m.y, m.size / 2, 0, Math.PI * 2); ctx.fill();
+                // Head
+                ctx.beginPath(); ctx.arc(m.x, m.y - m.size / 2 - 10, m.size / 4, 0, Math.PI * 2); ctx.fill();
+                
+                // Soldier helmet
+                if (m.config.behavior === 'soldier') {
+                    ctx.fillStyle = '#444';
+                    ctx.beginPath(); ctx.arc(m.x, m.y - m.size / 2 - 14, m.size / 3.5, Math.PI, 0); ctx.fill();
+                    // Gun
+                    ctx.fillStyle = '#666';
+                    ctx.fillRect(m.x + m.size / 3, m.y - 5, 20, 6);
+                }
+                
+                // Hunter glow
+                if (m.config.behavior === 'chase') {
+                    ctx.strokeStyle = '#ff00ff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.arc(m.x, m.y, m.size / 2 + 5, 0, Math.PI * 2); ctx.stroke();
+                }
+                
+                // Kamikaze - flashing warning
+                if (m.config.behavior === 'kamikaze') {
+                    ctx.fillStyle = '#ffff00';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('💣', m.x, m.y - m.size / 2 - 15);
+                }
+                
+                // Phaser - ghostly effect
+                if (m.config.behavior === 'phaser') {
+                    ctx.strokeStyle = '#00ffff';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath(); ctx.arc(m.x, m.y, m.size / 2 + 8, 0, Math.PI * 2); ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                
+                // Splitter - double circles indicator
+                if (m.config.splits && !m.isMini) {
+                    ctx.fillStyle = '#88ff00';
+                    ctx.font = '10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('x2', m.x, m.y + 5);
+                }
+                
+                // HP bar
+                if (m.maxHp > 1) {
+                    ctx.fillStyle = '#333'; ctx.fillRect(m.x - 20, m.y - m.size / 2 - 28, 40, 5);
+                    ctx.fillStyle = '#ff0000'; ctx.fillRect(m.x - 20, m.y - m.size / 2 - 28, 40 * (m.hp / m.maxHp), 5);
+                }
+                ctx.shadowBlur = 0;
+            });
+            
+            // Boss
+            if (boss) {
+                ctx.fillStyle = '#ff00ff'; ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 30;
+                ctx.beginPath(); ctx.arc(boss.x, boss.y, boss.size / 2, 0, Math.PI * 2); ctx.fill();
+                // Boss face
+                ctx.fillStyle = '#000';
+                ctx.beginPath(); ctx.arc(boss.x - 25, boss.y - 10, 12, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(boss.x + 25, boss.y - 10, 12, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath(); ctx.arc(boss.x - 25, boss.y - 10, 6, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(boss.x + 25, boss.y - 10, 6, 0, Math.PI * 2); ctx.fill();
+                // Crown
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath();
+                ctx.moveTo(boss.x - 30, boss.y - 50);
+                ctx.lineTo(boss.x - 20, boss.y - 70);
+                ctx.lineTo(boss.x - 10, boss.y - 55);
+                ctx.lineTo(boss.x, boss.y - 75);
+                ctx.lineTo(boss.x + 10, boss.y - 55);
+                ctx.lineTo(boss.x + 20, boss.y - 70);
+                ctx.lineTo(boss.x + 30, boss.y - 50);
+                ctx.closePath(); ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            
+            // HK-47
+            ctx.save();
+            ctx.translate(hk47.x, hk47.y);
+            ctx.rotate(hk47.rotation);
+            
+            // Shield effect
+            if (shieldActive && !hk47.dead) {
+                ctx.strokeStyle = `rgba(0, 170, 255, ${0.5 + Math.sin(gameTime * 10) * 0.3})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI * 2); ctx.stroke();
+            }
+            
+            ctx.fillStyle = hk47.dead ? '#666' : '#ff4444';
+            ctx.shadowColor = hk47.dead ? '#333' : '#ff0000'; ctx.shadowBlur = 20;
+            ctx.beginPath(); ctx.moveTo(0, -25); ctx.lineTo(20, -10); ctx.lineTo(20, 15); ctx.lineTo(0, 25); ctx.lineTo(-20, 15); ctx.lineTo(-20, -10); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = hk47.dead ? '#555' : '#cc3333'; ctx.beginPath(); ctx.arc(0, -30, 12, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = hk47.dead ? '#333' : '#ffff00'; ctx.shadowColor = hk47.dead ? '#000' : '#ffff00'; ctx.beginPath(); ctx.arc(0, -30, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#888'; ctx.fillRect(15, -15, 25, 6); ctx.fillRect(35, -18, 8, 12);
+            ctx.shadowBlur = 0;
+            ctx.restore();
+            
+            // Bomb counter
+            ctx.fillStyle = '#ff8800';
+            ctx.font = '14px Courier New';
+            ctx.textAlign = 'right';
+            ctx.fillText('💥 x' + bombs, canvas.width - 15, 25);
+        }
+        
+        function showFloatingText(x, y, text, className) {
+            const el = document.createElement('div');
+            el.className = 'floating-text ' + className;
+            el.textContent = text;
+            el.style.left = x + 'px'; el.style.top = y + 'px';
+            document.getElementById('gameContainer').appendChild(el);
+            setTimeout(() => el.remove(), 700);
+        }
+        
+        function updateUI() {
+            document.getElementById('score').textContent = 'SCORE: ' + Math.floor(score);
+            document.getElementById('level').textContent = 'LVL ' + level;
+            document.getElementById('kills').textContent = 'KILLS: ' + totalKills;
+            const progress = boss ? 100 : (levelKills / KILLS_PER_LEVEL * 100);
+            document.getElementById('levelFill').style.width = progress + '%';
+            document.getElementById('levelText').textContent = boss ? 'DEFEAT THE BOSS!' : `LEVEL ${level} - ${levelKills}/${KILLS_PER_LEVEL} KILLS`;
+        }
+        
+        function gameOver() {
+            if (score > highScore) { highScore = score; localStorage.setItem('hk47_hs_v5', highScore); }
+            setTimeout(() => {
+                if (isHighScore(score)) showNameEntry(score, level, totalKills);
+                else {
+                    document.getElementById('finalScore').textContent = Math.floor(score);
+                    document.getElementById('highScore').textContent = 'HIGH SCORE: ' + Math.floor(highScore);
+                    document.getElementById('killCount').textContent = 'KILLS: ' + totalKills + ' | LEVEL: ' + level + ' | BOMBS: ' + bombs;
+                    document.getElementById('deathQuote').textContent = deathQuotes[Math.floor(Math.random() * deathQuotes.length)];
+                    document.getElementById('gameOverScreen').style.display = 'flex';
+                }
+            }, 1500);
+        }
+        
+        function startGame() {
+            if (!audioContext) initAudio();
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('levelUpScreen').style.display = 'none';
+            document.getElementById('leaderboardScreen').style.display = 'none';
+            document.getElementById('nameEntryScreen').style.display = 'none';
+            document.getElementById('desktopHint').classList.add('game-active');
+            level = 1; totalKills = 0;
+            init();
+            gameRunning = true;
+        }
+        
+        function continueGame() {
+            document.getElementById('levelUpScreen').style.display = 'none';
+            meatbags = []; projectiles = []; enemyBullets = [];
+            gameRunning = true;
+        }
+        
+        // Keyboard
+        document.addEventListener('keydown', e => {
+            if (e.repeat) return;
+            switch(e.code) {
+                case 'KeyW': case 'ArrowUp': keys.up = true; e.preventDefault(); break;
+                case 'KeyS': case 'ArrowDown': keys.down = true; e.preventDefault(); break;
+                case 'KeyA': case 'ArrowLeft': keys.left = true; e.preventDefault(); break;
+                case 'KeyD': case 'ArrowRight': keys.right = true; e.preventDefault(); break;
+                case 'Space': keys.fire = true; e.preventDefault(); break;
+                case 'KeyB': useBomb(); e.preventDefault(); break;
+            }
+        });
+        document.addEventListener('keyup', e => {
+            switch(e.code) {
+                case 'KeyW': case 'ArrowUp': keys.up = false; break;
+                case 'KeyS': case 'ArrowDown': keys.down = false; break;
+                case 'KeyA': case 'ArrowLeft': keys.left = false; break;
+                case 'KeyD': case 'ArrowRight': keys.right = false; break;
+                case 'Space': keys.fire = false; break;
+            }
+        });
+        
+        canvas.addEventListener('click', e => { if (gameRunning && !hk47.dead) fireProjectile(); });
+        
+        // Touch joystick
+        const joystickZone = document.getElementById('joystickZone'), joystick = document.getElementById('joystick');
+        function updateJoystick(cx, cy) {
+            const rect = joystickZone.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2, centerY = rect.top + rect.height / 2;
+            let dx = cx - centerX, dy = cy - centerY;
+            const maxD = rect.width / 2 - 20, dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > maxD) { dx = dx/dist*maxD; dy = dy/dist*maxD; }
+            joystick.style.left = (50 + dx/rect.width*100) + '%';
+            joystick.style.top = (50 + dy/rect.height*100) + '%';
+            joystickX = dx / maxD; joystickY = dy / maxD;
+        }
+        function resetJoystick() { joystick.style.left = '50%'; joystick.style.top = '50%'; joystickX = joystickY = 0; joystickActive = false; }
+        
+        joystickZone.addEventListener('touchstart', e => { e.preventDefault(); joystickActive = true; updateJoystick(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+        joystickZone.addEventListener('touchmove', e => { e.preventDefault(); if (joystickActive) updateJoystick(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+        joystickZone.addEventListener('touchend', resetJoystick);
+        joystickZone.addEventListener('touchcancel', resetJoystick);
+        joystickZone.addEventListener('mousedown', e => { joystickActive = true; updateJoystick(e.clientX, e.clientY); });
+        document.addEventListener('mousemove', e => { if (joystickActive) updateJoystick(e.clientX, e.clientY); });
+        document.addEventListener('mouseup', resetJoystick);
+        
+        const fireZone = document.getElementById('fireZone');
+        fireZone.addEventListener('touchstart', e => { e.preventDefault(); if (gameRunning && !hk47.dead) fireProjectile(); }, { passive: false });
+        fireZone.addEventListener('mousedown', () => { if (gameRunning && !hk47.dead) fireProjectile(); });
+        
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+        document.getElementById('continueBtn').addEventListener('click', continueGame);
+        
+        let lastTime = 0;
+        function gameLoop(ts) {
+            const dt = Math.min((ts - lastTime) / 1000, 0.1);
+            lastTime = ts;
+            update(dt); updateDeadPhysics(dt); draw();
+            requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
