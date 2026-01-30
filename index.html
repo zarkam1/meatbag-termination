@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>MEATBAG TERMINATION PROTOCOL v6.3</title>
+    <title>MEATBAG TERMINATION PROTOCOL v6.4</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         body { background: #0a0a0a; overflow: hidden; font-family: 'Courier New', monospace; }
@@ -141,7 +141,7 @@
         
         <div id="startScreen" style="display:none;">
             <button id="soundToggle">🔊 ON</button>
-            <div class="version">v6.3 - BUGFIX EDITION!</div>
+            <div class="version">v6.4 - DEBUG EDITION!</div>
             <h1>🤖 MEATBAG TERMINATION PROTOCOL 🤖</h1>
             <div class="subtitle">NEW: Animated robot enemies! Environmental obstacles! Enhanced graphics!</div>
             <div class="features">
@@ -1335,14 +1335,35 @@
                 ctx.beginPath(); ctx.arc(0, 0, 55, 0, Math.PI * 2); ctx.stroke();
             }
             
+            // Always draw HK-47 (debug: bright red if something's wrong)
+            ctx.fillStyle = '#ff4444';
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 20;
+            
             if (!hk47.dead) {
-                drawHK47(ctx, 70, hk47.animTime, hk47.moving, hk47.shooting);
+                // Simple but visible HK-47
+                // Body
+                ctx.fillStyle = '#cc4422';
+                ctx.fillRect(-15, -20, 30, 45);
+                // Head
+                ctx.fillStyle = '#bb5533';
+                ctx.beginPath(); ctx.arc(0, -30, 12, 0, Math.PI * 2); ctx.fill();
+                // Eye
+                ctx.fillStyle = '#ffcc00';
+                ctx.beginPath(); ctx.arc(0, -30, 5, 0, Math.PI * 2); ctx.fill();
+                // Gun arm
+                ctx.fillStyle = '#666';
+                ctx.fillRect(15, -10, 25, 6);
+                // Legs
+                ctx.fillStyle = '#995533';
+                ctx.fillRect(-12, 25, 8, 25);
+                ctx.fillRect(4, 25, 8, 25);
             } else {
                 // Dead HK-47 - grayed out
                 ctx.globalAlpha = 0.6;
                 ctx.fillStyle = '#666';
-                ctx.beginPath(); ctx.moveTo(0, -25); ctx.lineTo(20, -10); ctx.lineTo(20, 15); ctx.lineTo(0, 25); ctx.lineTo(-20, 15); ctx.lineTo(-20, -10); ctx.closePath(); ctx.fill();
-                ctx.fillStyle = '#444'; ctx.beginPath(); ctx.arc(0, -30, 12, 0, Math.PI * 2); ctx.fill();
+                ctx.fillRect(-15, -20, 30, 45);
+                ctx.beginPath(); ctx.arc(0, -30, 12, 0, Math.PI * 2); ctx.fill();
                 ctx.globalAlpha = 1;
             }
             ctx.shadowBlur = 0;
@@ -1353,6 +1374,12 @@
             ctx.font = '14px Courier New';
             ctx.textAlign = 'right';
             ctx.fillText('💥 x' + bombs, canvas.width - 15, 25);
+            
+            // Debug: show HK-47 position
+            ctx.fillStyle = '#00ff00';
+            ctx.font = '12px Courier New';
+            ctx.textAlign = 'left';
+            ctx.fillText('HK47: ' + Math.round(hk47.x) + ',' + Math.round(hk47.y) + ' dead:' + hk47.dead, 10, canvas.height - 10);
         }
         
         function showFloatingText(x, y, text, className) {
