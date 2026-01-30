@@ -1323,10 +1323,14 @@
                 ctx.restore();
             }
             
-            // HK-47 - DIRECT DRAW (no transforms for debugging)
-            // Blink when invincible
-            const showHK = !hk47.dead && (hk47.invincible <= 0 || Math.floor(hk47.animTime * 10) % 2 === 0);
-            if (showHK) {
+            // HK-47 - DIRECT DRAW
+            if (!hk47.dead) {
+                // Invincibility glow effect instead of blinking
+                if (hk47.invincible > 0) {
+                    ctx.strokeStyle = '#00ffff';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(hk47.x - 20, hk47.y - 35, 40, 100);
+                }
                 const px = hk47.x;
                 const py = hk47.y;
                 
@@ -1383,11 +1387,17 @@
             ctx.textAlign = 'right';
             ctx.fillText('💥 x' + bombs, canvas.width - 15, 25);
             
-            // Debug: show HK-47 position
+            // Debug: show HK-47 position + ALWAYS draw a marker
             ctx.fillStyle = '#00ff00';
             ctx.font = '12px Courier New';
             ctx.textAlign = 'left';
-            ctx.fillText('HK47: ' + Math.round(hk47.x) + ',' + Math.round(hk47.y) + ' dead:' + hk47.dead, 10, canvas.height - 10);
+            ctx.fillText('HK47: ' + Math.round(hk47.x) + ',' + Math.round(hk47.y) + ' dead:' + hk47.dead + ' inv:' + hk47.invincible.toFixed(1), 10, canvas.height - 10);
+            
+            // ALWAYS draw a bright green circle at HK47 position
+            ctx.fillStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.arc(hk47.x, hk47.y, 10, 0, Math.PI * 2);
+            ctx.fill();
         }
         
         function showFloatingText(x, y, text, className) {
