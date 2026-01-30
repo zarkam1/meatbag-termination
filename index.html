@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>MEATBAG TERMINATION PROTOCOL v6.2</title>
+    <title>MEATBAG TERMINATION PROTOCOL v6.3</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         body { background: #0a0a0a; overflow: hidden; font-family: 'Courier New', monospace; }
@@ -141,7 +141,7 @@
         
         <div id="startScreen" style="display:none;">
             <button id="soundToggle">🔊 ON</button>
-            <div class="version">v6.2 - PURE CANVAS EDITION!</div>
+            <div class="version">v6.3 - BUGFIX EDITION!</div>
             <h1>🤖 MEATBAG TERMINATION PROTOCOL 🤖</h1>
             <div class="subtitle">NEW: Animated robot enemies! Environmental obstacles! Enhanced graphics!</div>
             <div class="features">
@@ -1026,93 +1026,73 @@
         }
         
         function drawHK47(ctx, size, animTime, moving, shooting) {
-            const s = size;
-            
-            ctx.shadowColor = '#ff4400';
-            ctx.shadowBlur = 12;
-            
-            // Legs (thin and long) - draw first so body overlaps
-            const legPhase = moving ? Math.sin(animTime * 10) * 0.2 : 0;
-            ctx.fillStyle = '#995533';
-            // Left leg
-            ctx.save();
-            ctx.translate(-s*0.12, s*0.1);
-            ctx.rotate(legPhase);
-            ctx.fillRect(-s*0.04, 0, s*0.08, s*0.45);
-            ctx.fillStyle = '#666';
-            ctx.fillRect(-s*0.05, s*0.4, s*0.1, s*0.08);
-            ctx.restore();
-            // Right leg
-            ctx.save();
-            ctx.translate(s*0.12, s*0.1);
-            ctx.rotate(-legPhase);
-            ctx.fillRect(-s*0.04, 0, s*0.08, s*0.45);
-            ctx.fillStyle = '#666';
-            ctx.fillRect(-s*0.05, s*0.4, s*0.1, s*0.08);
-            ctx.restore();
-            
-            // Thin torso
-            ctx.fillStyle = '#bb4422';
-            ctx.fillRect(-s*0.15, -s*0.25, s*0.3, s*0.4);
-            
-            // Chest plate detail
-            ctx.fillStyle = '#994422';
-            ctx.fillRect(-s*0.1, -s*0.2, s*0.2, s*0.15);
-            
-            // Shoulders
-            ctx.fillStyle = '#aa5533';
-            ctx.fillRect(-s*0.28, -s*0.25, s*0.12, s*0.1);
-            ctx.fillRect(s*0.16, -s*0.25, s*0.12, s*0.1);
-            
-            // Arms (thin)
-            const armAngle = shooting ? 0.4 : 0.1;
-            ctx.fillStyle = '#995533';
-            // Left arm
-            ctx.save();
-            ctx.translate(-s*0.28, -s*0.2);
-            ctx.rotate(-armAngle);
-            ctx.fillRect(-s*0.03, 0, s*0.06, s*0.3);
-            ctx.restore();
-            // Right arm + rifle
-            ctx.save();
-            ctx.translate(s*0.28, -s*0.2);
-            ctx.rotate(armAngle);
-            ctx.fillRect(-s*0.03, 0, s*0.06, s*0.25);
-            // Blaster rifle
-            ctx.fillStyle = '#555';
-            ctx.fillRect(s*0.02, s*0.08, s*0.3, s*0.05);
-            ctx.fillRect(s*0.25, s*0.04, s*0.06, s*0.12);
-            if (shooting) {
-                ctx.fillStyle = '#ffff00';
-                ctx.shadowColor = '#ffff00';
+            try {
+                const s = size;
+                
+                // Legs
+                const legPhase = moving ? Math.sin(animTime * 10) * 0.2 : 0;
+                ctx.fillStyle = '#995533';
+                ctx.save();
+                ctx.translate(-s*0.12, s*0.1);
+                ctx.rotate(legPhase);
+                ctx.fillRect(-s*0.04, 0, s*0.08, s*0.45);
+                ctx.restore();
+                ctx.save();
+                ctx.translate(s*0.12, s*0.1);
+                ctx.rotate(-legPhase);
+                ctx.fillRect(-s*0.04, 0, s*0.08, s*0.45);
+                ctx.restore();
+                
+                // Feet
+                ctx.fillStyle = '#666';
+                ctx.fillRect(-s*0.17, s*0.5, s*0.1, s*0.08);
+                ctx.fillRect(s*0.07, s*0.5, s*0.1, s*0.08);
+                
+                // Torso
+                ctx.fillStyle = '#bb4422';
+                ctx.fillRect(-s*0.15, -s*0.25, s*0.3, s*0.4);
+                
+                // Shoulders
+                ctx.fillStyle = '#aa5533';
+                ctx.fillRect(-s*0.28, -s*0.22, s*0.12, s*0.08);
+                ctx.fillRect(s*0.16, -s*0.22, s*0.12, s*0.08);
+                
+                // Arms
+                ctx.fillStyle = '#995533';
+                ctx.fillRect(-s*0.3, -s*0.15, s*0.06, s*0.3);
+                ctx.fillRect(s*0.24, -s*0.15, s*0.06, s*0.25);
+                
+                // Rifle
+                ctx.fillStyle = '#555';
+                ctx.fillRect(s*0.28, -s*0.05, s*0.25, s*0.05);
+                
+                // Muzzle flash
+                if (shooting) {
+                    ctx.fillStyle = '#ffff00';
+                    ctx.beginPath(); ctx.arc(s*0.55, -s*0.025, 8, 0, Math.PI * 2); ctx.fill();
+                }
+                
+                // Neck
+                ctx.fillStyle = '#886644';
+                ctx.fillRect(-s*0.04, -s*0.32, s*0.08, s*0.1);
+                
+                // Head
+                ctx.fillStyle = '#bb5533';
+                ctx.beginPath();
+                ctx.ellipse(0, -s*0.42, s*0.11, s*0.13, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Eye glow
+                ctx.fillStyle = '#ffcc00';
+                ctx.shadowColor = '#ffcc00';
                 ctx.shadowBlur = 15;
-                ctx.beginPath(); ctx.arc(s*0.35, s*0.1, 6, 0, Math.PI * 2); ctx.fill();
-                ctx.shadowColor = '#ff4400';
-                ctx.shadowBlur = 12;
+                ctx.beginPath(); ctx.arc(0, -s*0.42, s*0.05, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 0;
+            } catch(e) {
+                // Fallback simple shape
+                ctx.fillStyle = '#ff4444';
+                ctx.fillRect(-20, -30, 40, 60);
             }
-            ctx.restore();
-            
-            // Neck
-            ctx.fillStyle = '#886644';
-            ctx.fillRect(-s*0.04, -s*0.35, s*0.08, s*0.12);
-            
-            // Head (elongated oval - classic HK-47)
-            ctx.fillStyle = '#bb5533';
-            ctx.beginPath();
-            ctx.ellipse(0, -s*0.48, s*0.12, s*0.15, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Photoreceptor (single glowing eye)
-            ctx.fillStyle = '#000';
-            ctx.beginPath(); ctx.arc(0, -s*0.48, s*0.08, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#ffcc00';
-            ctx.shadowColor = '#ffcc00';
-            ctx.shadowBlur = 20;
-            ctx.beginPath(); ctx.arc(0, -s*0.48, s*0.06, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath(); ctx.arc(0, -s*0.48, s*0.025, 0, Math.PI * 2); ctx.fill();
-            
-            ctx.shadowBlur = 0;
         }
         
         // ============== DRAWING ==============
@@ -1486,9 +1466,13 @@
         // ============== GAME LOOP ==============
         let lastTime = 0;
         function gameLoop(ts) {
-            const dt = Math.min((ts - lastTime) / 1000, 0.1);
-            lastTime = ts;
-            update(dt); updateDeadPhysics(dt); draw();
+            try {
+                const dt = Math.min((ts - lastTime) / 1000, 0.1);
+                lastTime = ts;
+                update(dt); updateDeadPhysics(dt); draw();
+            } catch(e) {
+                console.error('Game loop error:', e);
+            }
             requestAnimationFrame(gameLoop);
         }
         
