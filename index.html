@@ -1003,6 +1003,8 @@
         // Keyboard
         document.addEventListener('keydown', e => {
             if (e.repeat) return;
+            // Don't capture keys when typing in input fields
+            if (document.activeElement.tagName === 'INPUT') return;
             switch(e.code) {
                 case 'KeyW': case 'ArrowUp': keys.up = true; e.preventDefault(); break;
                 case 'KeyS': case 'ArrowDown': keys.down = true; e.preventDefault(); break;
