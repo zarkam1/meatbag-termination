@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>MEATBAG TERMINATION PROTOCOL v6.4</title>
+    <title>MEATBAG TERMINATION PROTOCOL v6.5</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         body { background: #0a0a0a; overflow: hidden; font-family: 'Courier New', monospace; }
@@ -141,7 +141,7 @@
         
         <div id="startScreen" style="display:none;">
             <button id="soundToggle">🔊 ON</button>
-            <div class="version">v6.4 - DEBUG EDITION!</div>
+            <div class="version">v6.5 - DIRECT DRAW!</div>
             <h1>🤖 MEATBAG TERMINATION PROTOCOL 🤖</h1>
             <div class="subtitle">NEW: Animated robot enemies! Environmental obstacles! Enhanced graphics!</div>
             <div class="features">
@@ -1318,56 +1318,57 @@
                 ctx.restore();
             }
             
-            // HK-47
-            ctx.save();
-            ctx.translate(hk47.x, hk47.y);
-            ctx.rotate(hk47.rotation);
-            
-            // Walking bob
-            if (hk47.moving && !hk47.dead) {
-                ctx.translate(0, Math.sin(hk47.walkCycle) * 3);
-            }
-            
-            // Shield effect
-            if (shieldActive && !hk47.dead) {
-                ctx.strokeStyle = `rgba(0, 170, 255, ${0.5 + Math.sin(gameTime * 10) * 0.3})`;
-                ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.arc(0, 0, 55, 0, Math.PI * 2); ctx.stroke();
-            }
-            
-            // Always draw HK-47 (debug: bright red if something's wrong)
-            ctx.fillStyle = '#ff4444';
-            ctx.shadowColor = '#ff0000';
-            ctx.shadowBlur = 20;
-            
+            // HK-47 - DIRECT DRAW (no transforms for debugging)
             if (!hk47.dead) {
-                // Simple but visible HK-47
-                // Body
+                const px = hk47.x;
+                const py = hk47.y;
+                
+                // Body (orange rectangle)
                 ctx.fillStyle = '#cc4422';
-                ctx.fillRect(-15, -20, 30, 45);
-                // Head
+                ctx.fillRect(px - 15, py - 20, 30, 50);
+                
+                // Head (circle)
                 ctx.fillStyle = '#bb5533';
-                ctx.beginPath(); ctx.arc(0, -30, 12, 0, Math.PI * 2); ctx.fill();
-                // Eye
+                ctx.beginPath(); 
+                ctx.arc(px, py - 30, 14, 0, Math.PI * 2); 
+                ctx.fill();
+                
+                // Glowing eye
                 ctx.fillStyle = '#ffcc00';
-                ctx.beginPath(); ctx.arc(0, -30, 5, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowColor = '#ffcc00';
+                ctx.shadowBlur = 15;
+                ctx.beginPath(); 
+                ctx.arc(px, py - 30, 6, 0, Math.PI * 2); 
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
                 // Gun arm
-                ctx.fillStyle = '#666';
-                ctx.fillRect(15, -10, 25, 6);
+                ctx.fillStyle = '#555';
+                ctx.fillRect(px + 15, py - 5, 30, 8);
+                
                 // Legs
-                ctx.fillStyle = '#995533';
-                ctx.fillRect(-12, 25, 8, 25);
-                ctx.fillRect(4, 25, 8, 25);
+                ctx.fillStyle = '#884422';
+                ctx.fillRect(px - 10, py + 30, 8, 30);
+                ctx.fillRect(px + 2, py + 30, 8, 30);
+                
+                // Feet
+                ctx.fillStyle = '#444';
+                ctx.fillRect(px - 12, py + 55, 12, 8);
+                ctx.fillRect(px, py + 55, 12, 8);
+                
+                // Shield effect
+                if (shieldActive) {
+                    ctx.strokeStyle = '#00aaff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath(); 
+                    ctx.arc(px, py, 50, 0, Math.PI * 2); 
+                    ctx.stroke();
+                }
             } else {
-                // Dead HK-47 - grayed out
-                ctx.globalAlpha = 0.6;
+                // Dead - gray box falling
                 ctx.fillStyle = '#666';
-                ctx.fillRect(-15, -20, 30, 45);
-                ctx.beginPath(); ctx.arc(0, -30, 12, 0, Math.PI * 2); ctx.fill();
-                ctx.globalAlpha = 1;
+                ctx.fillRect(hk47.x - 15, hk47.y - 20, 30, 50);
             }
-            ctx.shadowBlur = 0;
-            ctx.restore();
             
             // Bomb counter
             ctx.fillStyle = '#ff8800';
