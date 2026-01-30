@@ -1323,16 +1323,22 @@
                 ctx.restore();
             }
             
-            // HK-47 - DIRECT DRAW
+            // HK-47 - DIRECT DRAW - Reset canvas state first!
+            ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.shadowBlur = 0;
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset any transforms
+            
             if (!hk47.dead) {
-                // Invincibility glow effect instead of blinking
+                const px = hk47.x;
+                const py = hk47.y;
+                
+                // Invincibility cyan border
                 if (hk47.invincible > 0) {
                     ctx.strokeStyle = '#00ffff';
                     ctx.lineWidth = 3;
-                    ctx.strokeRect(hk47.x - 20, hk47.y - 35, 40, 100);
+                    ctx.strokeRect(px - 22, py - 37, 44, 102);
                 }
-                const px = hk47.x;
-                const py = hk47.y;
                 
                 // Body (orange rectangle)
                 ctx.fillStyle = '#cc4422';
