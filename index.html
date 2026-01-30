@@ -1029,81 +1029,88 @@
             const s = size;
             
             ctx.shadowColor = '#ff4400';
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = 12;
             
-            // Main body (hexagonal)
-            ctx.fillStyle = '#cc4422';
-            ctx.beginPath();
-            ctx.moveTo(0, -s*0.5);
-            ctx.lineTo(s*0.4, -s*0.25);
-            ctx.lineTo(s*0.4, s*0.25);
-            ctx.lineTo(0, s*0.5);
-            ctx.lineTo(-s*0.4, s*0.25);
-            ctx.lineTo(-s*0.4, -s*0.25);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Body details
-            ctx.fillStyle = '#aa3311';
-            ctx.fillRect(-s*0.25, -s*0.15, s*0.5, s*0.3);
-            
-            // Head
-            ctx.fillStyle = '#bb4422';
-            ctx.beginPath(); ctx.arc(0, -s*0.6, s*0.25, 0, Math.PI * 2); ctx.fill();
-            
-            // Eye (glowing)
-            ctx.fillStyle = '#ffcc00';
-            ctx.shadowColor = '#ffcc00';
-            ctx.shadowBlur = 20;
-            ctx.beginPath(); ctx.arc(0, -s*0.6, s*0.12, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath(); ctx.arc(0, -s*0.6, s*0.05, 0, Math.PI * 2); ctx.fill();
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#ff4400';
-            
-            // Arms
-            const armAngle = shooting ? 0.3 : 0;
-            ctx.fillStyle = '#aa5533';
-            // Left arm
-            ctx.save();
-            ctx.translate(-s*0.45, -s*0.1);
-            ctx.rotate(-0.2 - armAngle);
-            ctx.fillRect(-s*0.08, 0, s*0.15, s*0.4);
-            ctx.restore();
-            // Right arm + gun
-            ctx.save();
-            ctx.translate(s*0.45, -s*0.1);
-            ctx.rotate(0.2 + armAngle);
-            ctx.fillRect(-s*0.08, 0, s*0.15, s*0.35);
-            // Gun
-            ctx.fillStyle = '#666';
-            ctx.fillRect(s*0.05, s*0.1, s*0.35, s*0.1);
-            ctx.fillRect(s*0.35, s*0.05, s*0.1, s*0.2);
-            if (shooting) {
-                ctx.fillStyle = '#ffff00';
-                ctx.beginPath(); ctx.arc(s*0.45, s*0.15, 8, 0, Math.PI * 2); ctx.fill();
-            }
-            ctx.restore();
-            
-            // Legs
-            const legPhase = moving ? Math.sin(animTime * 10) * 0.15 : 0;
-            ctx.fillStyle = '#aa5533';
+            // Legs (thin and long) - draw first so body overlaps
+            const legPhase = moving ? Math.sin(animTime * 10) * 0.2 : 0;
+            ctx.fillStyle = '#995533';
             // Left leg
             ctx.save();
-            ctx.translate(-s*0.2, s*0.45);
+            ctx.translate(-s*0.12, s*0.1);
             ctx.rotate(legPhase);
-            ctx.fillRect(-s*0.1, 0, s*0.18, s*0.4);
+            ctx.fillRect(-s*0.04, 0, s*0.08, s*0.45);
             ctx.fillStyle = '#666';
-            ctx.fillRect(-s*0.12, s*0.35, s*0.22, s*0.12);
+            ctx.fillRect(-s*0.05, s*0.4, s*0.1, s*0.08);
             ctx.restore();
             // Right leg
             ctx.save();
-            ctx.translate(s*0.2, s*0.45);
+            ctx.translate(s*0.12, s*0.1);
             ctx.rotate(-legPhase);
-            ctx.fillRect(-s*0.08, 0, s*0.18, s*0.4);
+            ctx.fillRect(-s*0.04, 0, s*0.08, s*0.45);
             ctx.fillStyle = '#666';
-            ctx.fillRect(-s*0.1, s*0.35, s*0.22, s*0.12);
+            ctx.fillRect(-s*0.05, s*0.4, s*0.1, s*0.08);
             ctx.restore();
+            
+            // Thin torso
+            ctx.fillStyle = '#bb4422';
+            ctx.fillRect(-s*0.15, -s*0.25, s*0.3, s*0.4);
+            
+            // Chest plate detail
+            ctx.fillStyle = '#994422';
+            ctx.fillRect(-s*0.1, -s*0.2, s*0.2, s*0.15);
+            
+            // Shoulders
+            ctx.fillStyle = '#aa5533';
+            ctx.fillRect(-s*0.28, -s*0.25, s*0.12, s*0.1);
+            ctx.fillRect(s*0.16, -s*0.25, s*0.12, s*0.1);
+            
+            // Arms (thin)
+            const armAngle = shooting ? 0.4 : 0.1;
+            ctx.fillStyle = '#995533';
+            // Left arm
+            ctx.save();
+            ctx.translate(-s*0.28, -s*0.2);
+            ctx.rotate(-armAngle);
+            ctx.fillRect(-s*0.03, 0, s*0.06, s*0.3);
+            ctx.restore();
+            // Right arm + rifle
+            ctx.save();
+            ctx.translate(s*0.28, -s*0.2);
+            ctx.rotate(armAngle);
+            ctx.fillRect(-s*0.03, 0, s*0.06, s*0.25);
+            // Blaster rifle
+            ctx.fillStyle = '#555';
+            ctx.fillRect(s*0.02, s*0.08, s*0.3, s*0.05);
+            ctx.fillRect(s*0.25, s*0.04, s*0.06, s*0.12);
+            if (shooting) {
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowColor = '#ffff00';
+                ctx.shadowBlur = 15;
+                ctx.beginPath(); ctx.arc(s*0.35, s*0.1, 6, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowColor = '#ff4400';
+                ctx.shadowBlur = 12;
+            }
+            ctx.restore();
+            
+            // Neck
+            ctx.fillStyle = '#886644';
+            ctx.fillRect(-s*0.04, -s*0.35, s*0.08, s*0.12);
+            
+            // Head (elongated oval - classic HK-47)
+            ctx.fillStyle = '#bb5533';
+            ctx.beginPath();
+            ctx.ellipse(0, -s*0.48, s*0.12, s*0.15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Photoreceptor (single glowing eye)
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.arc(0, -s*0.48, s*0.08, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ffcc00';
+            ctx.shadowColor = '#ffcc00';
+            ctx.shadowBlur = 20;
+            ctx.beginPath(); ctx.arc(0, -s*0.48, s*0.06, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.arc(0, -s*0.48, s*0.025, 0, Math.PI * 2); ctx.fill();
             
             ctx.shadowBlur = 0;
         }
