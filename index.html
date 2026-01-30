@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>MEATBAG TERMINATION PROTOCOL v6.5</title>
+    <title>MEATBAG TERMINATION PROTOCOL v6.6</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         body { background: #0a0a0a; overflow: hidden; font-family: 'Courier New', monospace; }
@@ -141,7 +141,7 @@
         
         <div id="startScreen" style="display:none;">
             <button id="soundToggle">🔊 ON</button>
-            <div class="version">v6.5 - DIRECT DRAW!</div>
+            <div class="version">v6.6 - SPAWN PROTECTION!</div>
             <h1>🤖 MEATBAG TERMINATION PROTOCOL 🤖</h1>
             <div class="subtitle">NEW: Animated robot enemies! Environmental obstacles! Enhanced graphics!</div>
             <div class="features">
@@ -317,7 +317,7 @@
         let gameRunning = false, score = 0, kills = 0, totalKills = 0, level = 1, levelKills = 0;
         let highScore = localStorage.getItem('hk47_hs_v6') || 0;
         let multiplier = 1, bombs = 3;
-        let hk47 = { x: 0, y: 0, dead: false, rotation: 0, deadVelX: 0, deadVelY: 0, animTime: 0, walkCycle: 0, shooting: false, shootTime: 0 };
+        let hk47 = { x: 0, y: 0, dead: false, rotation: 0, deadVelX: 0, deadVelY: 0, animTime: 0, walkCycle: 0, shooting: false, shootTime: 0, invincible: 0 };
         let enemies = [], projectiles = [], enemyBullets = [], explosions = [], powerups = [], muzzleFlashes = [];
         let obstacles = []; // Static environmental objects
         let boss = null, gameTime = 0, lastSpawn = 0;
@@ -359,7 +359,7 @@
         
         // ============== INITIALIZATION ==============
         function init() {
-            hk47 = { x: canvas.width / 2, y: canvas.height - 200, dead: false, rotation: 0, deadVelX: 0, deadVelY: 0, animTime: 0, walkCycle: 0, shooting: false, shootTime: 0, moving: false };
+            hk47 = { x: canvas.width / 2, y: canvas.height - 200, dead: false, rotation: 0, deadVelX: 0, deadVelY: 0, animTime: 0, walkCycle: 0, shooting: false, shootTime: 0, moving: false, invincible: 2 };
             enemies = []; projectiles = []; enemyBullets = []; explosions = []; powerups = []; muzzleFlashes = [];
             obstacles = [];
             boss = null; score = 0; kills = 0; levelKills = 0; bombs = 3;
@@ -555,6 +555,7 @@
             hk47.animTime += dt;
             if (hk47.shootTime > 0) hk47.shootTime -= dt;
             else hk47.shooting = false;
+            if (hk47.invincible > 0) hk47.invincible -= dt;
             
             // Update powerup timers
             if (shieldActive) { shieldTimer -= dt; if (shieldTimer <= 0) shieldActive = false; }
@@ -693,7 +694,7 @@
                 if (b.x < -20 || b.x > canvas.width + 20 || b.y < -20 || b.y > canvas.height + 20) { enemyBullets.splice(i, 1); continue; }
                 
                 const dx = b.x - hk47.x, dy = b.y - hk47.y;
-                if (Math.sqrt(dx*dx + dy*dy) < 25 + b.size && !hk47.dead) {
+                if (Math.sqrt(dx*dx + dy*dy) < 25 + b.size && !hk47.dead && hk47.invincible <= 0) {
                     if (shieldActive) {
                         shieldActive = false; shieldTimer = 0;
                         enemyBullets.splice(i, 1);
@@ -704,6 +705,8 @@
                         hk47.deadVelX = (Math.random() - 0.5) * 10;
                         hk47.deadVelY = -8;
                         playVoice('death');
+                        console.log('KILLED BY BULLET at', b.x, b.y, 'hk47 at', hk47.x, hk47.y);
+                        showFloatingText(hk47.x, hk47.y - 60, 'BULLET KILL!', 'boss-text');
                         gameOver();
                     }
                 }
@@ -769,7 +772,7 @@
                 const dist = Math.sqrt(dx*dx + dy*dy);
                 const hitDist = 25 + m.size / 2;
                 
-                if (dist < hitDist && !hk47.dead) {
+                if (dist < hitDist && !hk47.dead && hk47.invincible <= 0) {
                     if (m.config.behavior === 'kamikaze') {
                         createExplosion(m.x, m.y, '#ff0000', true);
                         showFloatingText(m.x, m.y, '💥 BOOM!', 'bomb-text');
@@ -804,6 +807,8 @@
                         hk47.deadVelX = (Math.random() - 0.5) * 10;
                         hk47.deadVelY = -8;
                         playVoice('death');
+                        console.log('KILLED BY ENEMY', m.type, 'at', m.x, m.y, 'hk47 at', hk47.x, hk47.y, 'dist:', dist, 'hitDist:', hitDist);
+                        showFloatingText(hk47.x, hk47.y - 60, 'ENEMY KILL: ' + m.type, 'boss-text');
                         gameOver();
                     }
                 } else if (dist < hitDist + 30 && !m.nearMissed) {
@@ -1319,7 +1324,9 @@
             }
             
             // HK-47 - DIRECT DRAW (no transforms for debugging)
-            if (!hk47.dead) {
+            // Blink when invincible
+            const showHK = !hk47.dead && (hk47.invincible <= 0 || Math.floor(hk47.animTime * 10) % 2 === 0);
+            if (showHK) {
                 const px = hk47.x;
                 const py = hk47.y;
                 
