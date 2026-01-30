@@ -203,26 +203,8 @@
         // ============== SPRITE LOADING ==============
         const sprites = {};
         const spritesToLoad = [
-            { name: 'robots', src: 'sprites/robots-v2.png' },
-            { name: 'vehicles', src: 'sprites/vehicles.png' },
-            { name: 'hk47', src: 'sprites/hk47-realistic.png' },
-            { name: 'boss', src: 'sprites/boss-realistic.png' }
+            { name: 'vehicles', src: 'sprites/vehicles.png' }
         ];
-        let spritesLoaded = 0;
-        
-        // Robot sprite definitions (from robots-v2.png sheet)
-        // Row 1: spherical bots and spider types
-        // Row 2: humanoid mechs and tank
-        const ROBOT_SPRITES = {
-            drone: { x: 160, y: 0, w: 120, h: 180 },      // Spherical with legs
-            spider: { x: 280, y: 0, w: 200, h: 180 },     // Spider bot  
-            wheeled: { x: 700, y: 0, w: 140, h: 180 },    // Wheeled sphere
-            mech_small: { x: 0, y: 200, w: 150, h: 220 }, // Small mech
-            mech_gun: { x: 150, y: 200, w: 200, h: 220 }, // Mech with gun raised
-            tank: { x: 500, y: 200, w: 200, h: 180 },     // Tank treads
-            mech_large: { x: 700, y: 200, w: 220, h: 240 }, // Large mech
-            spherical: { x: 550, y: 0, w: 120, h: 180 }   // Red striped sphere
-        };
         
         // Vehicle sprite definitions (from vehicles.png)
         const VEHICLE_SPRITES = {
@@ -401,14 +383,14 @@
         
         // ============== ENEMY TYPES ==============
         const ENEMY_TYPES = {
-            drone: { sprite: 'drone', speed: 1, size: 60, hp: 1, score: 100, behavior: 'float', animType: 'bob' },
-            spider: { sprite: 'spider', speed: 1.5, size: 70, hp: 2, score: 200, behavior: 'walk', animType: 'legs' },
-            wheeled: { sprite: 'wheeled', speed: 2, size: 55, hp: 1, score: 150, behavior: 'chase', animType: 'roll' },
-            mech: { sprite: 'mech_gun', speed: 0.8, size: 80, hp: 3, score: 300, behavior: 'soldier', animType: 'walk', shootRate: 2 },
-            tank: { sprite: 'tank', speed: 0.5, size: 90, hp: 5, score: 400, behavior: 'soldier', animType: 'treads', shootRate: 1.5 },
-            hunter: { sprite: 'mech_small', speed: 1.3, size: 65, hp: 2, score: 350, behavior: 'chase', animType: 'walk' },
-            kamikaze: { sprite: 'spherical', speed: 2.5, size: 50, hp: 1, score: 200, behavior: 'kamikaze', animType: 'pulse' },
-            phaser: { sprite: 'drone', speed: 0.8, size: 55, hp: 2, score: 400, behavior: 'phaser', animType: 'phase', teleportRate: 2.5 },
+            drone: { speed: 1, size: 50, hp: 1, score: 100, behavior: 'float' },
+            spider: { speed: 1.5, size: 60, hp: 2, score: 200, behavior: 'walk' },
+            wheeled: { speed: 2, size: 45, hp: 1, score: 150, behavior: 'chase' },
+            mech: { speed: 0.8, size: 70, hp: 3, score: 300, behavior: 'soldier', shootRate: 2 },
+            tank: { speed: 0.5, size: 80, hp: 5, score: 400, behavior: 'soldier', shootRate: 1.5 },
+            hunter: { speed: 1.3, size: 55, hp: 2, score: 350, behavior: 'chase' },
+            kamikaze: { speed: 2.5, size: 40, hp: 1, score: 200, behavior: 'kamikaze' },
+            phaser: { speed: 0.8, size: 45, hp: 2, score: 400, behavior: 'phaser', teleportRate: 2.5 },
         };
         
         const POWERUP_TYPES = ['shield', 'rapid', 'multi', 'bomb', 'slowmo', 'magnet', 'pierce'];
@@ -912,6 +894,258 @@
             hk47.rotation += 5 * dt;
         }
         
+        // ============== ROBOT DRAWING ==============
+        function drawRobot(ctx, type, size, animTime, shooting) {
+            const r = size / 2;
+            
+            ctx.shadowColor = '#ff4400';
+            ctx.shadowBlur = 10;
+            
+            if (type === 'drone') {
+                // Spherical drone with antenna
+                ctx.fillStyle = '#556677';
+                ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+                // Eye
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath(); ctx.arc(0, 0, r * 0.5, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ffaa00';
+                ctx.beginPath(); ctx.arc(0, 0, r * 0.25, 0, Math.PI * 2); ctx.fill();
+                // Antenna
+                ctx.strokeStyle = '#888';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(0, -r - 15); ctx.stroke();
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath(); ctx.arc(0, -r - 15, 3, 0, Math.PI * 2); ctx.fill();
+                // Legs
+                for (let i = 0; i < 3; i++) {
+                    const angle = (i / 3) * Math.PI * 2 + Math.PI/2;
+                    const legBend = Math.sin(animTime + i) * 5;
+                    ctx.strokeStyle = '#444';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(Math.cos(angle) * r * 0.8, Math.sin(angle) * r * 0.8);
+                    ctx.lineTo(Math.cos(angle) * (r + 20), Math.sin(angle) * (r + 20) + legBend);
+                    ctx.stroke();
+                }
+            } else if (type === 'spider') {
+                // Spider bot with 6 legs
+                ctx.fillStyle = '#445566';
+                ctx.beginPath(); ctx.ellipse(0, 0, r, r * 0.7, 0, 0, Math.PI * 2); ctx.fill();
+                // Eyes
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath(); ctx.arc(-r*0.3, -r*0.2, r*0.2, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(r*0.3, -r*0.2, r*0.2, 0, Math.PI * 2); ctx.fill();
+                // Legs
+                ctx.strokeStyle = '#556677';
+                ctx.lineWidth = 4;
+                for (let i = 0; i < 6; i++) {
+                    const side = i < 3 ? -1 : 1;
+                    const idx = i % 3;
+                    const baseAngle = (idx - 1) * 0.4 * side;
+                    const legMove = Math.sin(animTime * 2 + i * 0.8) * 8;
+                    ctx.beginPath();
+                    ctx.moveTo(side * r * 0.6, (idx - 1) * r * 0.4);
+                    ctx.quadraticCurveTo(
+                        side * (r + 15), (idx - 1) * r * 0.5,
+                        side * (r + 25), (idx - 1) * r * 0.6 + r * 0.5 + legMove
+                    );
+                    ctx.stroke();
+                }
+            } else if (type === 'wheeled') {
+                // Wheeled sphere
+                ctx.fillStyle = '#556677';
+                ctx.beginPath(); ctx.arc(0, -r*0.3, r*0.8, 0, Math.PI * 2); ctx.fill();
+                // Eye
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath(); ctx.arc(0, -r*0.3, r*0.4, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ffcc00';
+                ctx.beginPath(); ctx.arc(0, -r*0.3, r*0.2, 0, Math.PI * 2); ctx.fill();
+                // Wheels
+                ctx.fillStyle = '#333';
+                ctx.beginPath(); ctx.arc(-r*0.7, r*0.4, r*0.4, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(r*0.7, r*0.4, r*0.4, 0, Math.PI * 2); ctx.fill();
+                // Wheel detail
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath(); ctx.arc(-r*0.7, r*0.4, r*0.15, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(r*0.7, r*0.4, r*0.15, 0, Math.PI * 2); ctx.fill();
+            } else if (type === 'mech' || type === 'hunter') {
+                // Humanoid mech
+                const gunOffset = shooting ? 3 : 0;
+                // Body
+                ctx.fillStyle = '#556677';
+                ctx.fillRect(-r*0.5, -r*0.3, r, r*0.8);
+                // Head
+                ctx.fillStyle = '#445566';
+                ctx.fillRect(-r*0.3, -r*0.7, r*0.6, r*0.4);
+                // Eye
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath(); ctx.arc(0, -r*0.5, r*0.15, 0, Math.PI * 2); ctx.fill();
+                // Legs
+                const legPhase = Math.sin(animTime) * 0.2;
+                ctx.fillStyle = '#445566';
+                ctx.save();
+                ctx.translate(-r*0.3, r*0.5);
+                ctx.rotate(-legPhase);
+                ctx.fillRect(-r*0.15, 0, r*0.25, r*0.6);
+                ctx.restore();
+                ctx.save();
+                ctx.translate(r*0.3, r*0.5);
+                ctx.rotate(legPhase);
+                ctx.fillRect(-r*0.1, 0, r*0.25, r*0.6);
+                ctx.restore();
+                // Arms/Guns
+                ctx.fillStyle = '#666';
+                ctx.fillRect(r*0.5, -r*0.2 + gunOffset, r*0.5, r*0.15);
+                ctx.fillRect(-r - r*0.1, -r*0.2 - gunOffset, r*0.5, r*0.15);
+                if (shooting) {
+                    ctx.fillStyle = '#ffff00';
+                    ctx.beginPath(); ctx.arc(r + r*0.1, -r*0.15, 8, 0, Math.PI * 2); ctx.fill();
+                }
+            } else if (type === 'tank') {
+                // Tank with treads
+                ctx.fillStyle = '#333';
+                ctx.fillRect(-r, r*0.2, r*2, r*0.5); // Treads
+                ctx.fillStyle = '#556677';
+                ctx.fillRect(-r*0.7, -r*0.3, r*1.4, r*0.6); // Body
+                // Turret
+                ctx.fillStyle = '#445566';
+                ctx.beginPath(); ctx.arc(0, -r*0.1, r*0.4, 0, Math.PI * 2); ctx.fill();
+                // Gun barrel
+                ctx.fillStyle = '#333';
+                ctx.fillRect(r*0.3, -r*0.15, r*0.8, r*0.12);
+                // Eye
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath(); ctx.arc(-r*0.1, -r*0.15, r*0.15, 0, Math.PI * 2); ctx.fill();
+                // Tread detail
+                ctx.strokeStyle = '#444';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 5; i++) {
+                    const x = -r + r*0.4*i + (animTime * 10 % (r*0.4));
+                    ctx.beginPath(); ctx.moveTo(x, r*0.25); ctx.lineTo(x, r*0.65); ctx.stroke();
+                }
+            } else if (type === 'kamikaze') {
+                // Pulsing explosive sphere
+                const pulse = 1 + Math.sin(animTime * 5) * 0.15;
+                ctx.fillStyle = '#882222';
+                ctx.beginPath(); ctx.arc(0, 0, r * pulse, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath(); ctx.arc(0, 0, r * 0.6 * pulse, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ffcc00';
+                ctx.beginPath(); ctx.arc(0, 0, r * 0.3 * pulse, 0, Math.PI * 2); ctx.fill();
+                // Warning stripes
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(0, 0, r * 0.8 * pulse, 0, Math.PI * 0.5); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 0, r * 0.8 * pulse, Math.PI, Math.PI * 1.5); ctx.stroke();
+            } else if (type === 'phaser') {
+                // Ghostly teleporter
+                ctx.globalAlpha = 0.6 + Math.sin(animTime * 3) * 0.3;
+                ctx.fillStyle = '#00aaaa';
+                ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#00ffff';
+                ctx.beginPath(); ctx.arc(0, 0, r * 0.5, 0, Math.PI * 2); ctx.fill();
+                // Inner eye
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath(); ctx.arc(0, 0, r * 0.2, 0, Math.PI * 2); ctx.fill();
+                // Energy rings
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(0, 0, r * (1.2 + Math.sin(animTime * 2) * 0.2), 0, Math.PI * 2); ctx.stroke();
+                ctx.globalAlpha = 1;
+            } else {
+                // Default fallback
+                ctx.fillStyle = '#ff6666';
+                ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath(); ctx.arc(0, -r*0.3, r*0.3, 0, Math.PI * 2); ctx.fill();
+            }
+            
+            ctx.shadowBlur = 0;
+        }
+        
+        function drawHK47(ctx, size, animTime, moving, shooting) {
+            const s = size;
+            
+            ctx.shadowColor = '#ff4400';
+            ctx.shadowBlur = 15;
+            
+            // Main body (hexagonal)
+            ctx.fillStyle = '#cc4422';
+            ctx.beginPath();
+            ctx.moveTo(0, -s*0.5);
+            ctx.lineTo(s*0.4, -s*0.25);
+            ctx.lineTo(s*0.4, s*0.25);
+            ctx.lineTo(0, s*0.5);
+            ctx.lineTo(-s*0.4, s*0.25);
+            ctx.lineTo(-s*0.4, -s*0.25);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Body details
+            ctx.fillStyle = '#aa3311';
+            ctx.fillRect(-s*0.25, -s*0.15, s*0.5, s*0.3);
+            
+            // Head
+            ctx.fillStyle = '#bb4422';
+            ctx.beginPath(); ctx.arc(0, -s*0.6, s*0.25, 0, Math.PI * 2); ctx.fill();
+            
+            // Eye (glowing)
+            ctx.fillStyle = '#ffcc00';
+            ctx.shadowColor = '#ffcc00';
+            ctx.shadowBlur = 20;
+            ctx.beginPath(); ctx.arc(0, -s*0.6, s*0.12, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.arc(0, -s*0.6, s*0.05, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ff4400';
+            
+            // Arms
+            const armAngle = shooting ? 0.3 : 0;
+            ctx.fillStyle = '#aa5533';
+            // Left arm
+            ctx.save();
+            ctx.translate(-s*0.45, -s*0.1);
+            ctx.rotate(-0.2 - armAngle);
+            ctx.fillRect(-s*0.08, 0, s*0.15, s*0.4);
+            ctx.restore();
+            // Right arm + gun
+            ctx.save();
+            ctx.translate(s*0.45, -s*0.1);
+            ctx.rotate(0.2 + armAngle);
+            ctx.fillRect(-s*0.08, 0, s*0.15, s*0.35);
+            // Gun
+            ctx.fillStyle = '#666';
+            ctx.fillRect(s*0.05, s*0.1, s*0.35, s*0.1);
+            ctx.fillRect(s*0.35, s*0.05, s*0.1, s*0.2);
+            if (shooting) {
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath(); ctx.arc(s*0.45, s*0.15, 8, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.restore();
+            
+            // Legs
+            const legPhase = moving ? Math.sin(animTime * 10) * 0.15 : 0;
+            ctx.fillStyle = '#aa5533';
+            // Left leg
+            ctx.save();
+            ctx.translate(-s*0.2, s*0.45);
+            ctx.rotate(legPhase);
+            ctx.fillRect(-s*0.1, 0, s*0.18, s*0.4);
+            ctx.fillStyle = '#666';
+            ctx.fillRect(-s*0.12, s*0.35, s*0.22, s*0.12);
+            ctx.restore();
+            // Right leg
+            ctx.save();
+            ctx.translate(s*0.2, s*0.45);
+            ctx.rotate(-legPhase);
+            ctx.fillRect(-s*0.08, 0, s*0.18, s*0.4);
+            ctx.fillStyle = '#666';
+            ctx.fillRect(-s*0.1, s*0.35, s*0.22, s*0.12);
+            ctx.restore();
+            
+            ctx.shadowBlur = 0;
+        }
+        
         // ============== DRAWING ==============
         function draw() {
             ctx.fillStyle = '#111'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -998,43 +1232,11 @@
                 ctx.save();
                 ctx.translate(m.x, m.y);
                 
-                // Animation based on type
-                let bobOffset = 0;
-                let scaleX = m.facingLeft ? -1 : 1;
-                let rotation = 0;
+                // Flip sprite based on direction
+                if (m.facingLeft) ctx.scale(-1, 1);
                 
-                if (m.config.animType === 'bob') {
-                    bobOffset = Math.sin(m.animTime) * 5;
-                } else if (m.config.animType === 'legs' || m.config.animType === 'walk') {
-                    bobOffset = Math.sin(m.animTime * 2) * 3;
-                } else if (m.config.animType === 'roll') {
-                    rotation = m.animTime * 0.5;
-                } else if (m.config.animType === 'pulse') {
-                    const pulse = 1 + Math.sin(m.animTime * 3) * 0.1;
-                    ctx.scale(pulse, pulse);
-                } else if (m.config.animType === 'phase') {
-                    ctx.globalAlpha = 0.5 + Math.sin(m.animTime * 2) * 0.3;
-                }
-                
-                ctx.scale(scaleX, 1);
-                ctx.rotate(rotation);
-                ctx.translate(0, bobOffset);
-                
-                if (sprites.robots && sprites.robots.complete && spriteData) {
-                    const scale = m.size / Math.max(spriteData.w, spriteData.h) * 1.5;
-                    ctx.drawImage(
-                        sprites.robots,
-                        spriteData.x, spriteData.y, spriteData.w, spriteData.h,
-                        -spriteData.w * scale / 2, -spriteData.h * scale / 2,
-                        spriteData.w * scale, spriteData.h * scale
-                    );
-                } else {
-                    // Fallback to simple shapes
-                    ctx.fillStyle = '#ff6666';
-                    ctx.beginPath(); ctx.arc(0, 0, m.size / 2, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#ff0000';
-                    ctx.beginPath(); ctx.arc(0, -5, 8, 0, Math.PI * 2); ctx.fill();
-                }
+                // Draw robot based on type with detailed canvas rendering
+                drawRobot(ctx, m.type, m.size, m.animTime, m.shootAnimTime > 0);
                 
                 ctx.restore();
                 
@@ -1054,20 +1256,58 @@
                 const bossHover = Math.sin(boss.animTime * 2) * 5;
                 ctx.translate(0, bossHover);
                 
-                if (sprites.boss && sprites.boss.complete) {
-                    const scale = boss.size / 500;
-                    ctx.drawImage(sprites.boss, -250 * scale, -250 * scale, 500 * scale, 500 * scale);
-                } else {
-                    // Fallback boss
-                    ctx.fillStyle = '#ff00ff'; ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 30;
-                    ctx.beginPath(); ctx.arc(0, 0, boss.size / 2, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#000';
-                    ctx.beginPath(); ctx.arc(-25, -10, 12, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(25, -10, 12, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#ff0000';
-                    ctx.beginPath(); ctx.arc(-25, -10, 6, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(25, -10, 6, 0, Math.PI * 2); ctx.fill();
-                }
+                // Draw boss - large menacing mech
+                const bs = boss.size;
+                ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 30;
+                
+                // Main body
+                ctx.fillStyle = '#553366';
+                ctx.fillRect(-bs*0.4, -bs*0.3, bs*0.8, bs*0.7);
+                
+                // Upper body
+                ctx.fillStyle = '#664477';
+                ctx.beginPath();
+                ctx.moveTo(-bs*0.5, -bs*0.1);
+                ctx.lineTo(-bs*0.3, -bs*0.5);
+                ctx.lineTo(bs*0.3, -bs*0.5);
+                ctx.lineTo(bs*0.5, -bs*0.1);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Head
+                ctx.fillStyle = '#775588';
+                ctx.beginPath(); ctx.arc(0, -bs*0.45, bs*0.2, 0, Math.PI * 2); ctx.fill();
+                
+                // Eyes (menacing)
+                ctx.fillStyle = '#000';
+                ctx.beginPath(); ctx.arc(-bs*0.08, -bs*0.48, bs*0.08, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(bs*0.08, -bs*0.48, bs*0.08, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ff0066';
+                ctx.shadowColor = '#ff0066';
+                ctx.beginPath(); ctx.arc(-bs*0.08, -bs*0.48, bs*0.05, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(bs*0.08, -bs*0.48, bs*0.05, 0, Math.PI * 2); ctx.fill();
+                
+                // Crown/horns
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath();
+                ctx.moveTo(-bs*0.25, -bs*0.55);
+                ctx.lineTo(-bs*0.2, -bs*0.75);
+                ctx.lineTo(-bs*0.1, -bs*0.6);
+                ctx.lineTo(0, -bs*0.8);
+                ctx.lineTo(bs*0.1, -bs*0.6);
+                ctx.lineTo(bs*0.2, -bs*0.75);
+                ctx.lineTo(bs*0.25, -bs*0.55);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Arms/cannons
+                ctx.fillStyle = '#444';
+                ctx.fillRect(-bs*0.65, -bs*0.2, bs*0.2, bs*0.5);
+                ctx.fillRect(bs*0.45, -bs*0.2, bs*0.2, bs*0.5);
+                // Cannon barrels
+                ctx.fillStyle = '#333';
+                ctx.fillRect(-bs*0.6, bs*0.25, bs*0.1, bs*0.25);
+                ctx.fillRect(bs*0.5, bs*0.25, bs*0.1, bs*0.25);
                 ctx.shadowBlur = 0;
                 ctx.restore();
             }
@@ -1089,17 +1329,15 @@
                 ctx.beginPath(); ctx.arc(0, 0, 55, 0, Math.PI * 2); ctx.stroke();
             }
             
-            if (sprites.hk47 && sprites.hk47.complete && !hk47.dead) {
-                const scale = 0.12;
-                ctx.drawImage(sprites.hk47, -512 * scale, -512 * scale, 1024 * scale, 1024 * scale);
+            if (!hk47.dead) {
+                drawHK47(ctx, 70, hk47.animTime, hk47.moving, hk47.shooting);
             } else {
-                // Fallback HK-47
-                ctx.fillStyle = hk47.dead ? '#666' : '#ff4444';
-                ctx.shadowColor = hk47.dead ? '#333' : '#ff0000'; ctx.shadowBlur = 20;
+                // Dead HK-47 - grayed out
+                ctx.globalAlpha = 0.6;
+                ctx.fillStyle = '#666';
                 ctx.beginPath(); ctx.moveTo(0, -25); ctx.lineTo(20, -10); ctx.lineTo(20, 15); ctx.lineTo(0, 25); ctx.lineTo(-20, 15); ctx.lineTo(-20, -10); ctx.closePath(); ctx.fill();
-                ctx.fillStyle = hk47.dead ? '#555' : '#cc3333'; ctx.beginPath(); ctx.arc(0, -30, 12, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = hk47.dead ? '#333' : '#ffff00'; ctx.shadowColor = hk47.dead ? '#000' : '#ffff00'; ctx.beginPath(); ctx.arc(0, -30, 5, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#888'; ctx.fillRect(15, -15, 25, 6); ctx.fillRect(35, -18, 8, 12);
+                ctx.fillStyle = '#444'; ctx.beginPath(); ctx.arc(0, -30, 12, 0, Math.PI * 2); ctx.fill();
+                ctx.globalAlpha = 1;
             }
             ctx.shadowBlur = 0;
             ctx.restore();
