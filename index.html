@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>MEATBAG TERMINATION PROTOCOL v6.6</title>
+    <title>MEATBAG TERMINATION PROTOCOL v7.0</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         body { background: #0a0a0a; overflow: hidden; font-family: 'Courier New', monospace; }
@@ -141,7 +141,7 @@
         
         <div id="startScreen" style="display:none;">
             <button id="soundToggle">🔊 ON</button>
-            <div class="version">v6.6 - SPAWN PROTECTION!</div>
+            <div class="version">v7.0 - ROBOT ASSAULT!</div>
             <h1>🤖 MEATBAG TERMINATION PROTOCOL 🤖</h1>
             <div class="subtitle">NEW: Animated robot enemies! Environmental obstacles! Enhanced graphics!</div>
             <div class="features">
@@ -705,8 +705,6 @@
                         hk47.deadVelX = (Math.random() - 0.5) * 10;
                         hk47.deadVelY = -8;
                         playVoice('death');
-                        console.log('KILLED BY BULLET at', b.x, b.y, 'hk47 at', hk47.x, hk47.y);
-                        showFloatingText(hk47.x, hk47.y - 60, 'BULLET KILL!', 'boss-text');
                         gameOver();
                     }
                 }
@@ -807,8 +805,6 @@
                         hk47.deadVelX = (Math.random() - 0.5) * 10;
                         hk47.deadVelY = -8;
                         playVoice('death');
-                        console.log('KILLED BY ENEMY', m.type, 'at', m.x, m.y, 'hk47 at', hk47.x, hk47.y, 'dist:', dist, 'hitDist:', hitDist);
-                        showFloatingText(hk47.x, hk47.y - 60, 'ENEMY KILL: ' + m.type, 'boss-text');
                         gameOver();
                     }
                 } else if (dist < hitDist + 30 && !m.nearMissed) {
@@ -1109,22 +1105,6 @@
             for (let y = 0; y < canvas.height; y += 50) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
             for (let x = 0; x < canvas.width; x += 50) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
             
-            // ===== DRAW HK-47 FIRST (TEST) =====
-            if (gameRunning && !hk47.dead) {
-                ctx.fillStyle = '#cc4422';
-                ctx.fillRect(hk47.x - 15, hk47.y - 20, 30, 50);
-                ctx.fillStyle = '#bb5533';
-                ctx.beginPath(); ctx.arc(hk47.x, hk47.y - 30, 14, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#ffcc00';
-                ctx.beginPath(); ctx.arc(hk47.x, hk47.y - 30, 6, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#555';
-                ctx.fillRect(hk47.x + 15, hk47.y - 5, 30, 8);
-                ctx.fillStyle = '#884422';
-                ctx.fillRect(hk47.x - 10, hk47.y + 30, 8, 30);
-                ctx.fillRect(hk47.x + 2, hk47.y + 30, 8, 30);
-            }
-            // ===== END HK-47 FIRST =====
-            
             // Draw obstacles (vehicles, barriers) - canvas rendered
             for (const obs of obstacles) {
                 ctx.save();
@@ -1407,17 +1387,6 @@
             ctx.textAlign = 'right';
             ctx.fillText('💥 x' + bombs, canvas.width - 15, 25);
             
-            // Debug: show HK-47 position + ALWAYS draw a marker
-            ctx.fillStyle = '#00ff00';
-            ctx.font = '12px Courier New';
-            ctx.textAlign = 'left';
-            ctx.fillText('HK47: ' + Math.round(hk47.x) + ',' + Math.round(hk47.y) + ' dead:' + hk47.dead + ' inv:' + hk47.invincible.toFixed(1), 10, canvas.height - 10);
-            
-            // ALWAYS draw a bright green circle at HK47 position
-            ctx.fillStyle = '#00ff00';
-            ctx.beginPath();
-            ctx.arc(hk47.x, hk47.y, 10, 0, Math.PI * 2);
-            ctx.fill();
         }
         
         function showFloatingText(x, y, text, className) {
