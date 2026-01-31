@@ -1252,17 +1252,15 @@
                 ctx.beginPath(); ctx.arc(f.x, f.y, 8, 0, Math.PI * 2); ctx.fill();
             });
             
-            // Draw enemies with sprites and animation
+            // Draw enemies
             enemies.forEach(m => {
-                const spriteData = ROBOT_SPRITES[m.config.sprite];
-                
                 ctx.save();
                 ctx.translate(m.x, m.y);
                 
-                // Flip sprite based on direction
+                // Flip based on direction
                 if (m.facingLeft) ctx.scale(-1, 1);
                 
-                // Draw robot based on type with detailed canvas rendering
+                // Draw robot based on type
                 drawRobot(ctx, m.type, m.size, m.animTime, m.shootAnimTime > 0);
                 
                 ctx.restore();
